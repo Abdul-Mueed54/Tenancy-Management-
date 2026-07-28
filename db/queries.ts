@@ -54,3 +54,30 @@ export async function insertFullTenantProfile(tenantData: NewTenantParams, agree
   // 3. Insert the Agreement
   await db.insert(agreements).values(agreementData);
 }
+
+// _____________________________________Buildings Logic__________________________________________
+
+// Add a new building
+export const insertBuilding = async (name: string, locationDetails: string) => {
+  try {
+    await db.insert(buildings).values({
+      name,
+      location_details: locationDetails,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error inserting building: ", error);
+    return { success: false, error };
+  }
+};
+
+// Get all buildings
+export const getBuildings = async () => {
+  try {
+    const allBuildings = await db.select().from(buildings);
+    return { success: true, data: allBuildings };
+  } catch (error) {
+    console.error("Error fetching buildings: ", error);
+    return { success: false, error, data: [] };
+  }
+};

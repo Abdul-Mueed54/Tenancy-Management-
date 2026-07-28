@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Stack, Tabs } from 'expo-router';
 import { Ionicons,  } from '@expo/vector-icons';
 
 export default function TabLayout() {
@@ -6,52 +6,41 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#0f766e', // React Native requires the exact hex code here
+        tabBarActiveTintColor: '#0f766e',
         tabBarInactiveTintColor: '#737373',
         tabBarStyle: {
           backgroundColor: '#ffffff',
-          borderTopWidth: 1,
           borderTopColor: '#e5e5e5',
-          height: 65,
-          paddingBottom: 10,
-          paddingTop: 10,
+          height: 60,
+          marginBottom: 16,
+          marginHorizontal: 18,
+          padding: 3,
+          borderRadius: 20,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
-          marginTop: 4,
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
+      <Tabs.Screen name="index" options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={24} />
-          ),
+          tabBarIcon: ({ color, size }) => ( <Ionicons name="home" color={color} size={24} /> ),
         }}
       />
 
-      <Tabs.Screen
-        name="tenants"
-        options={{
-          title: 'Tenants',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" color={color} size={24} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="buildings"
-        options={{
+      <Tabs.Screen name="buildings" options={{
           title: 'Buildings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="business" color={color} size={26} />
-          ),
+          tabBarIcon: ({ color, size }) => ( <Ionicons name="business" color={color} size={26} /> ),
         }}
       />
+
+      <Tabs.Screen name="tenants" options={{
+          title: 'Tenants',
+          tabBarIcon: ({ color, size }) => ( <Ionicons name="people" color={color} size={24} /> ),
+        }}
+      />
+
     </Tabs>
   );
 }

@@ -1,6 +1,5 @@
 import '../global.css';
 
-import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { openDatabaseSync } from 'expo-sqlite';
@@ -10,7 +9,7 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { db } from '@/db';
 import migrations from '@/drizzle/migrations';
 
-const expoDb = openDatabaseSync('tenancy.db');
+const expoDb = openDatabaseSync('tenencyManagement.db');
 
 export default function RootLayout() {
   useDrizzleStudio(expoDb);
@@ -33,6 +32,17 @@ export default function RootLayout() {
     );
   }
 
-  // The Root Layout MUST return a Stack so non-tab screens (like Add Tenant) can render
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+      <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/*  bottom drawer */}
+      <Stack.Screen
+        name="buildings/add"
+        options={{
+          presentation: 'transparentModal',
+          headerShown: false,
+          animation: 'slide_from_bottom'
+        }}
+      />
+    </Stack>);
 }
