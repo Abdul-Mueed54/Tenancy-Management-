@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function TenantsScreen() {
+export default function BuildingsScreen() {
   return (
     <View className="flex-1 items-center justify-center bg-background">
-      <Text className="text-xl font-bold text-primary">Tenants Directory</Text>
+      <Text className="text-xl font-bold text-primary">Buildings Management</Text>
     </View>
   );
 }

@@ -1,38 +1,57 @@
-// 1. THIS IS THE CRITICAL LINE FOR NATIVEWIND STYLES:
-import '../../global.css';
+import { Tabs } from 'expo-router';
+import { Ionicons,  } from '@expo/vector-icons';
 
-import { useEffect } from 'react';
-import { View, Text } from 'react-native';
-import { Stack } from 'expo-router';
-import { openDatabaseSync } from 'expo-sqlite';
-import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
-import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: '#0f766e', // React Native requires the exact hex code here
+        tabBarInactiveTintColor: '#737373',
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e5e5e5',
+          height: 65,
+          paddingBottom: 10,
+          paddingTop: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={24} />
+          ),
+        }}
+      />
 
-import { db } from '@/db';
-import migrations from '@/drizzle/migrations';
+      <Tabs.Screen
+        name="tenants"
+        options={{
+          title: 'Tenants',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" color={color} size={24} />
+          ),
+        }}
+      />
 
-const expoDb = openDatabaseSync('tenancy.db');
-
-export default function RootLayout() {
-  useDrizzleStudio(expoDb);
-
-  const { success, error } = useMigrations(db, migrations);
-
-  if (error) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <Text className="text-red-500 font-bold">Migration error: {error.message}</Text>
-      </View>
-    );
-  }
-
-  if (!success) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <Text className="text-foreground">Building database...</Text>
-      </View>
-    );
-  }
-
-  return <Stack screenOptions={{ headerShown: false }} />;
+      <Tabs.Screen
+        name="buildings"
+        options={{
+          title: 'Buildings',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="business" color={color} size={26} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
 }
