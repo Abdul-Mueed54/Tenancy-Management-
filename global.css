@@ -2,13 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* You can keep your existing CSS variables for the Olive theme down here! */
-/* ─── Theme: design tokens (light / dark) ───────────────────────── */
 @layer theme {
   :root {
-    /* PRO TIP: I changed the default --primary to your Olive RGB (128 128 0)
-       Now all reusable components like Buttons will be Olive by default! */
-    --primary: 128 128 0;
+    --primary: 15 118 110;
     --primary-foreground: 250 250 250;
     --card: 255 255 255;
     --secondary: 245 245 245;
@@ -22,15 +18,15 @@
     --foreground: 10 10 10;
     --border: 229 229 229;
     --input: 229 229 229;
-    --ring: 128 128 0; /* Updated ring to match Olive */
+    --ring: 15 118 110;
     --accent: 247 247 247;
     --accent-foreground: 52 52 52;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --primary: 244 244 220; /* Lighter Olive for dark mode */
-      --primary-foreground: 23 23 23;
+      --primary: 153 246 228;
+      --primary-foreground: 15 118 110;
       --card: 23 23 23;
       --secondary: 38 38 38;
       --secondary-foreground: 250 250 250;
@@ -45,12 +41,9 @@
       --input: 46 46 46;
       --accent: 38 38 38;
       --accent-foreground: 250 250 250;
-      --ring: 115 115 115;
+      --ring: 153 246 228;
     }
   }
-
-  /* (Kept your root.dark and root.light unchanged for brevity,
-     but you can update their --primary values similarly if needed) */
 }
 
 @theme inline {
@@ -73,11 +66,11 @@
   --color-accent-foreground: rgb(var(--accent-foreground));
 }
 
-/* ─── Your Custom Olive Theme Extensions ───────────────────────── */
 @theme {
-  --color-primary-0: #f4f4dc;
-  --color-primary-100: #e9e9b8;
-  --color-primary-500: #808000;
-  --color-primary-600: #666600;
-  --color-primary-900: #333300;
+  --color-primary-0: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-900: #134e4a; 
 }

@@ -1,4 +1,3 @@
-// db/schema.ts
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const buildings = sqliteTable('buildings', {
@@ -32,7 +31,7 @@ export const ledgers = sqliteTable('ledgers', {
   agreement_id: text('agreement_id').references(() => agreements.agreement_id).notNull(),
   entry_type: text('entry_type').notNull(), // 'rent', 'k_electric', 'gas', 'water'
   billing_month: text('billing_month').notNull(), // e.g., '2026-07'
-  total_payable_bamount: integer('total_payable_amount').notNull(),
+  total_payable_amount: integer('total_payable_amount').notNull(),
   amount_paid: integer('amount_paid').notNull().default(0),
   amount_due: integer('amount_due').notNull().default(0),
   status: text('status').notNull().default('pending'), // 'pending', 'partial', 'paid'
