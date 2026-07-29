@@ -17,6 +17,7 @@
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
+    "@rn-primitives/alert-dialog": "^1.5.2",
     "@rn-primitives/slot": "^1.5.2",
     "babel-plugin-inline-import": "^3.0.0",
     "class-variance-authority": "^0.7.1",

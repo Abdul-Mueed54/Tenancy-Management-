@@ -51,11 +51,24 @@ export default function BuildingsScreen() {
           renderItem={({ item }) => (
             <View className="bg-white p-4 rounded-xl mb-4 border border-border shadow-sm">
               <View className="flex-row items-center">
-                <View className="bg-primary/10 p-3 rounded-full mr-4"> <Ionicons name="business" size={24} color="#0f766e" /> </View>
+                <View className="bg-primary/10 p-3 rounded-full mr-4">
+                <Ionicons name="business" size={24} color="#0f766e" />
+                </View>
                 <View className="flex-1">
                   <Text className="text-lg font-bold text-foreground">{item.name}</Text>
                   {item.location_details ? ( <Text className="text-sm text-muted-foreground mt-1">{item.location_details}</Text> ) : null}
                 </View>
+
+              {/* THE EDIT BUTTON */}
+              <TouchableOpacity
+                className="p-2 bg-muted rounded-full"
+                onPress={() => router.push({
+                  pathname: '/buildings/edit',
+                  params: { oldName: item.name, oldLocation: item.location_details || '' }
+                })}
+              >
+                <Ionicons name="pencil" size={20} color="#737373" />
+              </TouchableOpacity>
               </View>
             </View>
           )}

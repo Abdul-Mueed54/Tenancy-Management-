@@ -35,14 +35,15 @@ export default function RootLayout() {
   return (
       <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      {/*  bottom drawer */}
+      {/*  add buildings drawer */}
       <Stack.Screen
         name="buildings/add"
-        options={{
-          presentation: 'transparentModal',
-          headerShown: false,
-          animation: 'slide_from_bottom'
-        }}
+        options={{ presentation: 'transparentModal', headerShown: false, animation: 'slide_from_bottom' }}
+      />
+      {/* edit buildings drawer */}
+      <Stack.Screen
+        name="buildings/edit"
+        options={{ presentation: 'transparentModal', headerShown: false, animation: 'slide_from_bottom' }}
       />
     </Stack>);
 }
