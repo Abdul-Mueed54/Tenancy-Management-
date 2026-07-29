@@ -24,7 +24,7 @@ export default function AddBuildingDrawer() {
 
   return (
     <View className="flex-1">
-      <View className="absolute inset-0 bg-foreground">
+      <View className="absolute inset-0 bg-black/50">
         <TouchableOpacity className="flex-1" activeOpacity={1} onPress={() => router.back()} />
       </View>
       <KeyboardAvoidingView

@@ -81,3 +81,27 @@ export const getBuildings = async () => {
     return { success: false, error, data: [] };
   }
 };
+
+// Update existing Building
+export const updateBuilding = async (oldName: string, newName: string, newLocation: string) => {
+  try {
+    await db.update(buildings)
+      .set({ name: newName, location_details: newLocation })
+      .where(eq(buildings.name, oldName));
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating building:", error);
+    return { success: false, error };
+  }
+};
+
+// delete existing Building
+export const deleteBuilding = async (name: string) => {
+  try {
+    await db.delete(buildings).where(eq(buildings.name, name));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting building:", error);
+    return { success: false, error };
+  }
+};
