@@ -18,10 +18,12 @@ type RegisterTenantPayload = {
   rentDueDay: number;
 };
 
+// ------------------------------- Tenants Logic -------------------------------------------------------
+
+// add new tenant
 export const registerNewTenant = async (data: RegisterTenantPayload) => {
   try {
     await db.transaction(async (tx) => {
-      // 1. Insert the Tenant
       await tx.insert(tenants).values({
         cnic_number: data.cnicNumber,
         name: data.fullName,
@@ -31,11 +33,8 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
         cnic_uri: data.cnic_uri,
       });
 
-      // 2. Generate Agreement ID and Insert Agreement
       const currentYear = dayjs(data.moveInDate).format('YYYY');
       const agreementId = `${data.buildingName}-${data.cnicNumber}-${currentYear}`;
-
-      // Standard local contracts are usually 11 months
       const endDate = dayjs(data.moveInDate).add(11, 'month').format('YYYY-MM-DD');
 
       await tx.insert(agreements).values({
@@ -50,7 +49,6 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
         is_active: true,
       });
 
-      // 3. Calculate Ledger Status & Insert First Rent Ledger
       const amountDue = data.monthlyRent - data.firstMonthRentCollected;
       let status = 'pending';
       if (amountDue <= 0) status = 'paid';
@@ -75,7 +73,30 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
     return { success: false, error };
   }
 };
-// _____________________________________Buildings Logic__________________________________________
+
+// get tenants of specific building
+export const getTenantsByBuilding = async (buildingName: string) => {
+  try {
+    const result = await db
+      .select({
+        cnic: tenants.cnic_number,
+        name: tenants.name,
+        contact: tenants.contact_no,
+        rentAmount: agreements.monthly_rent,
+        isActive: agreements.is_active,
+      })
+      .from(agreements)
+      .innerJoin(tenants, eq(agreements.tenant_cnic, tenants.cnic_number))
+      .where(eq(agreements.building_name, buildingName));
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Failed to fetch building tenants:", error);
+    return { success: false, data: [] };
+  }
+};
+
+// ----------------------------------------- Buildings Logic ---------------------------------------------
 
 // Add a new building
 export const insertBuilding = async (name: string, locationDetails: string) => {

@@ -119,10 +119,9 @@ export default function AddTenantScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg">
       <Stack.Screen options={{ headerShown: false }} />
-
-      <View className="flex-row items-center px-4 pt-12 pb-4 border-b border-border bg-white z-10 shadow-sm">
+      <View className="flex-row items-center px-4 pt-12 pb-4 border-b border-border  z-10 shadow-sm">
         <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
           <Text className="text-foreground text-xl font-bold"><Ionicons name="chevron-back" size={24}/></Text>
         </TouchableOpacity>
