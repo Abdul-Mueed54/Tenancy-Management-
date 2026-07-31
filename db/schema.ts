@@ -22,6 +22,7 @@ export const agreements = sqliteTable('agreements', {
   end_date: text('end_date').notNull(),
   advance_amount: integer('advance_amount').notNull(),
   monthly_rent: integer('monthly_rent').notNull(),
+  rent_due_day: integer('rent_due_day').notNull(),
   attachment_uri: text('attachment_uri'),
   is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 });

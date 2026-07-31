@@ -6,6 +6,7 @@ CREATE TABLE `agreements` (
 	`end_date` text NOT NULL,
 	`advance_amount` integer NOT NULL,
 	`monthly_rent` integer NOT NULL,
+	`rent_due_day` integer NOT NULL,
 	`attachment_uri` text,
 	`is_active` integer DEFAULT true NOT NULL,
 	FOREIGN KEY (`tenant_cnic`) REFERENCES `tenants`(`cnic_number`) ON UPDATE no action ON DELETE no action,

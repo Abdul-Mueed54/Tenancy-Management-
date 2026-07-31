@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c0fdacd8-0196-4aab-a41e-01b690c3d45b",
+  "id": "405b0b3a-9ac8-450b-a651-da14b5b5b09e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "agreements": {
@@ -51,6 +51,13 @@
         },
         "monthly_rent": {
           "name": "monthly_rent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rent_due_day": {
+          "name": "rent_due_day",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
