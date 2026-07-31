@@ -75,20 +75,29 @@ export default function BuildingDetailsScreen() {
 
       ) : ( <ScrollView className="flex-1 p-4">
           {tenants.map((tenant) => (
-            <View key={tenant.cnic} className="border border-border rounded-xl p-4 mb-3 flex-row bg-white items-center justify-between">
-              <View>
+            <View key={tenant.cnic}>
+            <TouchableOpacity onPress={() => router.push(`/tenants/${tenant.cnic}`)}>
+             <View className="border border-border rounded-xl p-4 mb-3 flex-row bg-white items-center justify-between">
+              <View >
                 <Text className="text-lg font-bold text-foreground">{tenant.name}</Text>
                 <Text className="text-muted-foreground mt-1">{tenant.contact}</Text>
               </View>
               <View className="items-end">
                 <Text className="text-foreground font-medium">Rs {tenant.rentAmount}</Text>
+                  {tenant.isActive ? (
                 <View className="bg-green-100 px-2 py-1 rounded mt-1">
-                  <Text className="text-green-700 text-xs font-bold uppercase">Active</Text>
+                    <Text className="text-green-700 text-xs font-bold uppercase">Active</Text>
                 </View>
+                  ): (
+                    <View className="bg-red-100 px-2 py-1 rounded mt-1">
+                    <Text className="text-red-700 text-xs font-bold uppercase">in Active</Text>
+                      </View>
+                    )}
               </View>
+              </View>
+            </TouchableOpacity>
             </View>
           ))}
-          <View className="h-12" />
         </ScrollView>
       )}
     </View>

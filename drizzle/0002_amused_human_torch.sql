@@ -1,0 +1,1 @@
+ALTER TABLE `agreements` ADD `unit_number` text NOT NULL;

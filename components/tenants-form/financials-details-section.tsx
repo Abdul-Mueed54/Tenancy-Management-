@@ -12,13 +12,10 @@ type Props = {
   presetBuildingName?: string;
   moveInDate: Dayjs;
   setShowMoveInPicker: (show: boolean) => void;
+  isEdit: boolean;
 };
 
-export function FinancialsSection({ control, errors,  getValues, buildingOptions, presetBuildingName, moveInDate, setShowMoveInPicker }: Props) {
-
-  // Watch the monthly rent so we can validate the collected rent against it
-  // const currentMonthlyRent = parseInt(watch("monthlyRent")) || 0;
-
+export function FinancialsSection({ control, errors,  getValues, buildingOptions, presetBuildingName, moveInDate, setShowMoveInPicker, isEdit = false }: Props) {
   return (
     <View className="mb-8">
       <Text className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-wider">Move-In & Financials</Text>
@@ -89,7 +86,8 @@ export function FinancialsSection({ control, errors,  getValues, buildingOptions
         </View>
       </View>
 
-      <View className="mb-4">
+      {!isEdit && (
+        <View className="mb-4">
         <Text className="text-sm mb-1 text-foreground font-medium">1st Month Rent Collected Now</Text>
         <Controller
           control={control}
@@ -111,13 +109,14 @@ export function FinancialsSection({ control, errors,  getValues, buildingOptions
               <TextInput className="flex-1 py-3 text-foreground" placeholder="0" keyboardType="numeric" onBlur={onBlur} onChangeText={onChange} value={value} />
             </View>
           )}
-        />
+          />
         {errors.firstMonthRentCollected ? (
           <Text className="text-xs text-red-500 mt-1">{errors.firstMonthRentCollected.message}</Text>
         ) : (
           <Text className="text-xs text-muted-foreground mt-1">Automatically creates the first payment receipt.</Text>
         )}
       </View>
+        )}
 
       <View className="flex-row justify-between mb-4">
         <View className="flex-1 mr-2">

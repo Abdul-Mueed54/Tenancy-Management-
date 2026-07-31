@@ -13,6 +13,7 @@ type RegisterTenantPayload = {
   buildingName: string;
   advanceAmount: number;
   monthlyRent: number;
+  unitNumber: string;
   firstMonthRentCollected: number;
   moveInDate: string;
   rentDueDay: number;
@@ -41,6 +42,7 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
         agreement_id: agreementId,
         tenant_cnic: data.cnicNumber,
         building_name: data.buildingName,
+        unit_number: data.unitNumber,
         start_date: data.moveInDate,
         end_date: endDate,
         advance_amount: data.advanceAmount,
@@ -57,6 +59,7 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
       const billingMonth = dayjs(data.moveInDate).format('YYYY-MM');
 
       await tx.insert(ledgers).values({
+        tenant_cnic: data.cnicNumber,
         agreement_id: agreementId,
         entry_type: 'rent',
         billing_month: billingMonth,
@@ -93,6 +96,72 @@ export const getTenantsByBuilding = async (buildingName: string) => {
   } catch (error) {
     console.error("Failed to fetch building tenants:", error);
     return { success: false, data: [] };
+  }
+};
+
+
+export const getFullTenantDetails = async (cnic: string) => {
+  try {
+    const result = await db
+      .select({
+        tenant: tenants,
+        agreement: agreements,
+      })
+      .from(tenants)
+      .innerJoin(agreements, eq(tenants.cnic_number, agreements.tenant_cnic))
+      .where(eq(tenants.cnic_number, cnic))
+      .limit(1);
+
+    return { success: true, data: result[0] };
+  } catch (error) {
+    console.error("Error fetching full tenant details:", error);
+    return { success: false, data: null };
+  }
+};
+
+export const toggleTenantStatus = async (agreementId: string, currentStatus: boolean) => {
+  try {
+    await db.update(agreements)
+      .set({ is_active: !currentStatus })
+      .where(eq(agreements.agreement_id, agreementId));
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling status:", error);
+    return { success: false };
+  }
+};
+
+// Update the Tenant and Agreement
+export const updateExistingTenant = async (cnic: string, data: any) => {
+  try {
+    await db.transaction(async (tx) => {
+      // 1. Update Tenant Details
+      await tx.update(tenants)
+        .set({
+          name: data.fullName,
+          contact_no: data.contactNumber,
+          permanent_address: data.presentAddress,
+          cnic_expiry_date: data.cnicExpiryDate,
+          cnic_uri: data.cnic_uri,
+        })
+        .where(eq(tenants.cnic_number, cnic));
+
+      // 2. Update Agreement Details
+      await tx.update(agreements)
+        .set({
+          building_name: data.buildingName,
+          unit_number: data.unitNumber,
+          advance_amount: data.advanceAmount,
+          monthly_rent: data.monthlyRent,
+          rent_due_day: data.rentDueDay,
+        })
+        .where(eq(agreements.tenant_cnic, cnic));
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update failed:", error);
+    return { success: false, error };
   }
 };
 
