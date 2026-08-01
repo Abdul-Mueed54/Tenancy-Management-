@@ -72,11 +72,11 @@ export default function TenantDetailsScreen() {
   const { tenant, agreement } = data;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 ">
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* HEADER WITH EDIT BUTTON */}
-      <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border bg-white shadow-sm">
+      <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="p-2 mr-1 -ml-2">
             <Ionicons name="chevron-back" size={24} color="#000" />
@@ -172,7 +172,7 @@ export default function TenantDetailsScreen() {
 
         {/* SECTION: LEDGERS & FINANCES ROUTING */}
         <TouchableOpacity
-          // onPress={() => router.push(`/ledgers/${agreement.agreement_id}`)}
+          onPress={() => router.push(`/ledgers/${agreement.agreement_id}`)}
           className="bg-white rounded-2xl p-5 mb-6 shadow-sm border border-border flex-row justify-between items-center"
         >
           <View className="flex-row items-center">

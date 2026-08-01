@@ -1,6 +1,6 @@
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { db } from './index';
-import { tenants, agreements, buildings, ledgers } from './schema';
+import { tenants, agreements, buildings, ledgers, misc_charges } from './schema';
 import dayjs from 'dayjs';
 
 type RegisterTenantPayload = {
@@ -213,5 +213,36 @@ export const deleteBuilding = async (name: string) => {
   } catch (error) {
     console.error("Error deleting building:", error);
     return { success: false, error };
+  }
+};
+
+// ------------------------------------------------- Ledgers Logic -----------------------------------------------------------------
+
+export const getFinancialHistory = async (agreementId: string) => {
+  try {
+    // Fetch Rent Ledgers
+    const rentLedgers = await db
+      .select()
+      .from(ledgers)
+      .where(eq(ledgers.agreement_id, agreementId))
+      .orderBy(desc(ledgers.created_at));
+
+    // Fetch Misc Charges
+    const miscCharges = await db
+      .select()
+      .from(misc_charges)
+      .where(eq(misc_charges.agreement_id, agreementId))
+      .orderBy(desc(misc_charges.created_at));
+
+    return {
+      success: true,
+      data: {
+        rentLedgers,
+        miscCharges
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching finances:", error);
+    return { success: false, data: null };
   }
 };
