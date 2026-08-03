@@ -13,12 +13,9 @@ import { Alert, Keyboard, Modal, Text, TouchableOpacity, View, } from "react-nat
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import DateTimePicker, { useDefaultClassNames, } from "react-native-ui-datepicker";
 import TenantFormData from "../types/types";
-import { tenants } from "@/db/schema";
 
 export default function AddTenantScreen() {
-  const { buildingName: presetBuildingName } = useLocalSearchParams<{
-    buildingName?: string;
-  }>();
+  const {buildingId, buildingName: presetBuildingName } = useLocalSearchParams<{ buildingId: string; buildingName?: string; }>();
 
   // Dates & Images
   const [cnicImage, setCnicImage] = useState<string | null>(null);
@@ -32,19 +29,10 @@ export default function AddTenantScreen() {
   const [showMoveInPicker, setShowMoveInPicker] = useState(false);
 
   // Buildings data
-  const [buildingsList, setBuildingsList] = useState<{ name: string }[]>([]);
-  const buildingOptions = buildingsList.map((b) => ({
-    label: b.name,
-    value: b.name,
-  }));
+  const [buildingsList, setBuildingsList] = useState<{id: string; name: string }[]>([]);
+  const buildingOptions = buildingsList.map((b) => ({ label: b.name, value: b.name, }));
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    getValues,
-  } = useForm<TenantFormData>({
-    // mode: "onChange",
+  const { control, handleSubmit, formState: { errors }, getValues, } = useForm<TenantFormData>({
     defaultValues: {
       fullName: "",
       contactNumber: "",
@@ -79,17 +67,20 @@ export default function AddTenantScreen() {
 
   const onSubmit = async (data: TenantFormData) => {
     Keyboard.dismiss();
+    const finalBuildingId = buildingId || data.buildingId;
 
+    if (!finalBuildingId) {
+      Alert.alert("Error", "Please select a building.");
+      return;
+    }
     const payload = {
-      tenantsId: data.tenantsId,
       fullName: data.fullName,
       contactNumber: data.contactNumber,
       presentAddress: data.presentAddress,
       cnicNumber: data.cnicNumber,
       cnicExpiryDate: cnicExpiryDate.format("YYYY-MM-DD"),
       cnic_uri: cnicImage,
-      buildingId: data.buildingId,
-      buildingName: data.buildingName,
+      buildingId: finalBuildingId,
       unitNumber: data.unitNumber,
       advanceAmount: parseInt(data.advanceAmount) || 0,
       monthlyRent: parseInt(data.monthlyRent) || 0,
@@ -107,17 +98,8 @@ export default function AddTenantScreen() {
     }
   };
 
-  const DatePickerModal = ({
-    visible,
-    date,
-    setDate,
-    onClose,
-  }: {
-    visible: boolean;
-    date: Dayjs;
-    setDate: (d: Dayjs) => void;
-    onClose: () => void;
-  }) => {
+  const DatePickerModal = ({ visible, date, setDate, onClose,
+  }: { visible: boolean; date: Dayjs; setDate: (d: Dayjs) => void; onClose: () => void; }) => {
     const defaultClassNames = useDefaultClassNames();
     return (
       <Modal visible={visible} transparent={true} animationType="fade">

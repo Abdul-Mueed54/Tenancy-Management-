@@ -13,7 +13,7 @@ import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement
 import { uploadAgreementDocument } from '@/db/queries/agreements.queries';
 
 export default function TenantDetailsScreen() {
-  const { cnic } = useLocalSearchParams<{ cnic: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,8 +28,8 @@ export default function TenantDetailsScreen() {
 
   const fetchDetails = async () => {
     setIsLoading(true);
-    if (cnic) {
-      const result = await getFullTenantDetails(cnic);
+    if (id) {
+      const result = await getFullTenantDetails(id);
       if (result.success) setData(result.data);
     }
     setIsLoading(false);
@@ -38,12 +38,12 @@ export default function TenantDetailsScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchDetails();
-    }, [cnic])
+    }, [id])
   );
 
   const confirmToggleStatus = async () => {
     setShowStatusAlert(false);
-    const res = await toggleTenantStatus(data.agreement.agreement_id, data.agreement.is_active, cnic);
+    const res = await toggleTenantStatus(data.agreement.agreement_id, data.agreement.is_active, id);
     if (res.success) {
       showToast(`Tenant ${data.agreement.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
       fetchDetails();
@@ -103,7 +103,18 @@ export default function TenantDetailsScreen() {
     {
       label: agreement.attachment_uri ? "Update Agreement" : "Upload Agreement",
       icon: "document-attach",
-      onPress: handleUploadAgreement,
+      // 5. Use the dedicated upload screen we talked about!
+      onPress: () => {
+        setShowMenu(false);
+        router.push({
+          pathname: '/tenants/upload-agreement',
+          params: {
+            agreementId: agreement.id,
+            tenantId: tenant.id,
+            tenantName: tenant.name
+          }
+        });
+      },
     },
     {
       label: agreement.is_active ? 'Deactivate' : 'Reactivate',
@@ -127,7 +138,7 @@ export default function TenantDetailsScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-foreground">{tenant.name}</Text>
-            <Text className="text-xs text-muted-foreground">{agreement.building_name} - {agreement.unit_number}</Text>
+            <Text className="text-xs text-muted-foreground">Unit {agreement.unit_number}</Text>
           </View>
         </View>
 
