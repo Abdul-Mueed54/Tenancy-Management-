@@ -1,26 +1,22 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Sharing from 'expo-sharing';
-import { Platform } from 'react-native'; // Import Platform
-import * as FileSystem from 'expo-file-system/legacy';
-import * as IntentLauncher from 'expo-intent-launcher';
-import { getFullTenantDetails, toggleTenantStatus, uploadAgreementDocument } from '@/db/queries';
-import dayjs from 'dayjs';
-
+import { getFullTenantDetails, toggleTenantStatus, } from '@/db/queries/tenants.queries';
 import { CustomAlertDialog } from '@/components/ui/alert-dialog';
 import { CustomDropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { CustomToast } from '@/components/ui/toast';
+import { ActionsRow } from '@/components/tenants-view/actions-row';
+import { DisplayPersonalInfoOfTenant } from '@/components/tenants-view/personal-info-section';
+import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement-details-section';
+import { uploadAgreementDocument } from '@/db/queries/agreements.queries';
 
 export default function TenantDetailsScreen() {
   const { cnic } = useLocalSearchParams<{ cnic: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [imageToView, setImageToView] = useState<string | null>(null);
 
   // Modals & Toast state
   const [showStatusAlert, setShowStatusAlert] = useState(false);
@@ -48,7 +44,7 @@ export default function TenantDetailsScreen() {
 
   const confirmToggleStatus = async () => {
     setShowStatusAlert(false);
-    const res = await toggleTenantStatus(data.agreement.agreement_id, data.agreement.is_active);
+    const res = await toggleTenantStatus(data.agreement.agreement_id, data.agreement.is_active, cnic);
     if (res.success) {
       showToast(`Tenant ${data.agreement.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
       fetchDetails();
@@ -57,7 +53,6 @@ export default function TenantDetailsScreen() {
     }
   };
 
-  // NEW: Handles both PDFs and Images
   const handleUploadAgreement = async () => {
     setShowMenu(false);
 
@@ -83,46 +78,6 @@ export default function TenantDetailsScreen() {
     }
   };
 
-  const openDocument = async (uri: string | null) => {
-    if (!uri) {
-      showToast("No document is attached.", "error");
-      return;
-    }
-
-    if (uri.toLowerCase().endsWith('.pdf')) {
-      try {
-        if (Platform.OS === 'android') {
-          // 1. Android: Convert file:// URI to content:// URI so other apps can read it safely
-          const contentUri = await FileSystem.getContentUriAsync(uri);
-
-          // 2. Force open the default PDF viewer app directl
-          await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-            data: contentUri,
-            flags: 1,
-            type: 'application/pdf',
-          });
-        } else {
-          // 3. iOS: Use UTI to trigger Apple's native full-screen Quick Look preview
-          const isAvailable = await Sharing.isAvailableAsync();
-          if (isAvailable) {
-            await Sharing.shareAsync(uri, { UTI: 'com.adobe.pdf' });
-          } else {
-            showToast("PDF viewer not available on this device.", "error");
-          }
-        }
-      } catch (error) {
-        showToast("No PDF viewer app installed on your phone.", "error");
-      }
-    } else {
-      // It's an image, use our custom fullscreen modal
-      setImageToView(uri);
-      setShowImageModal(true);
-    }
-  };
-
-  const handleGenerateHistoryPDF = async () => {
-    showToast("PDF Generation coming soon!", "info");
-  };
 
   if (isLoading) {
     return (
@@ -171,7 +126,6 @@ export default function TenantDetailsScreen() {
         onHide={() => setToast({ ...toast, visible: false })}
       />
 
-      {/* HEADER WITH THREE DOTS */}
       <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10 bg-white">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="p-2 mr-1 -ml-2">
@@ -197,70 +151,13 @@ export default function TenantDetailsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1 bg-muted/10 p-4">
         {/* QUICK ACTIONS ROW */}
-        <View className="flex-row justify-between mb-6">
-          <TouchableOpacity onPress={handleGenerateHistoryPDF} className="flex-1 bg-white p-3 rounded-xl border border-border items-center mr-2 shadow-sm">
-            <Ionicons name="document-text" size={20} color="#0f766e" />
-            <Text className="text-primary-700 text-xs font-bold mt-1">Summary PDF</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => openDocument(tenant.cnic_uri)} className="flex-1 bg-white border border-border p-3 rounded-xl items-center mr-2 shadow-sm">
-            <Ionicons name="id-card" size={20} color="#0f766e" />
-            <Text className="text-primary-700 text-xs font-bold mt-1">View CNIC</Text>
-          </TouchableOpacity>
-
-          {/* AGREEMENT BUTTON */}
-          <TouchableOpacity onPress={() => openDocument(agreement.attachment_uri)} className="flex-1 bg-white border border-border p-3 rounded-xl items-center shadow-sm">
-            <Ionicons name="contract" size={20} color="#0f766e" />
-            <Text className="text-primary-700 text-xs font-bold mt-1">Agreement</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ... (Personal Information & Contract Info sections remain exactly the same) ... */}
+        <ActionsRow />
 
         {/* SECTION: TENANT DETAILS */}
-        <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-border">
-          <Text className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-wider">Personal Information</Text>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">CNIC Number</Text>
-            <Text className="font-medium text-foreground">{tenant.cnic_number}</Text>
-          </View>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">Contact</Text>
-            <Text className="font-medium text-foreground">{tenant.contact_no}</Text>
-          </View>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">CNIC Expiry</Text>
-            <Text className="font-medium text-foreground">{dayjs(tenant.cnic_expiry_date).format('DD MMM YYYY')}</Text>
-          </View>
-          <View className="flex-col">
-            <Text className="text-muted-foreground mb-1">Permanent Address</Text>
-            <Text className="font-medium text-foreground leading-5">{tenant.permanent_address}</Text>
-          </View>
-        </View>
+        <DisplayPersonalInfoOfTenant />
 
         {/* SECTION: AGREEMENT DETAILS */}
-        <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-border">
-          <Text className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-wider">Financial & Contract Info</Text>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">Monthly Rent</Text>
-            <Text className="font-bold text-teal-700">Rs {agreement.monthly_rent}</Text>
-          </View>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">Advance Deposit</Text>
-            <Text className="font-medium text-foreground">Rs {agreement.advance_amount}</Text>
-          </View>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">Move-in Date</Text>
-            <Text className="font-medium text-foreground">{dayjs(agreement.start_date).format('DD MMM YYYY')}</Text>
-          </View>
-          <View className="flex-row justify-between mb-3 border-b border-border/50 pb-3">
-            <Text className="text-muted-foreground">Rent Due Date</Text>
-            <Text className="font-medium text-foreground">{agreement.rent_due_day} of every month</Text>
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-muted-foreground">Profile Created</Text>
-            <Text className="text-xs text-muted-foreground mt-0.5">{dayjs(tenant.created_at).format('DD MMM YYYY, h:mm A')}</Text>
-          </View>
-        </View>
+        <DisplayAgreementDetailsOfTenant />
 
         <TouchableOpacity
           onPress={() => router.push(`/ledgers/${agreement.agreement_id}`)}
@@ -286,20 +183,7 @@ export default function TenantDetailsScreen() {
         items={menuItems}
       />
 
-      <Modal visible={showImageModal} transparent={true} animationType="fade" onRequestClose={() => setShowImageModal(false)}>
-        <View className="flex-1 bg-black justify-center items-center">
-          <TouchableOpacity onPress={() => setShowImageModal(false)} className="absolute top-12 right-6 z-10 p-2 bg-black/50 rounded-full">
-            <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
-          {imageToView && (
-            <Image
-              source={{ uri: imageToView }}
-              className="w-full h-[70%]"
-              resizeMode="contain"
-            />
-          )}
-        </View>
-      </Modal>
+
 
       <CustomAlertDialog
         visible={showStatusAlert}

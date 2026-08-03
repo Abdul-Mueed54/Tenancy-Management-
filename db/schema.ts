@@ -60,3 +60,11 @@ export const misc_charges = sqliteTable('misc_charges', {
   status: text('status').notNull().default('pending'), // 'pending' or 'paid'
   ...timestamps,
 });
+
+export const activity_logs = sqliteTable('activity_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  tenant_cnic: text('tenant_cnic').references(() => tenants.cnic_number).notNull(),
+  action_type: text('action_type').notNull(), // e.g., 'STATUS_CHANGE', 'DOCUMENT', 'FINANCE', 'SYSTEM'
+  description: text('description').notNull(), // e.g., 'Tenant was deactivated', 'Agreement uploaded'
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+});

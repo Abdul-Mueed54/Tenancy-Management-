@@ -1,25 +1,8 @@
-import { desc, eq, sql } from 'drizzle-orm';
-import { db } from './index';
-import { tenants, agreements, buildings, ledgers, misc_charges } from './schema';
-import dayjs from 'dayjs';
-
-type RegisterTenantPayload = {
-  fullName: string;
-  contactNumber: string;
-  presentAddress: string;
-  cnicNumber: string;
-  cnicExpiryDate: string;
-  cnic_uri: string | null;
-  buildingName: string;
-  advanceAmount: number;
-  monthlyRent: number;
-  unitNumber: string;
-  firstMonthRentCollected: number;
-  moveInDate: string;
-  rentDueDay: number;
-};
-
-// ------------------------------- Tenants Logic -------------------------------------------------------
+import { RegisterTenantPayload } from "@/app/types/types";
+import { db } from "..";
+import { activity_logs, agreements, ledgers, tenants } from "../schema";
+import dayjs from "dayjs";
+import { eq } from "drizzle-orm";
 
 // add new tenant
 export const registerNewTenant = async (data: RegisterTenantPayload) => {
@@ -119,11 +102,20 @@ export const getFullTenantDetails = async (cnic: string) => {
   }
 };
 
-export const toggleTenantStatus = async (agreementId: string, currentStatus: boolean) => {
+export const toggleTenantStatus = async (agreementId: string, currentStatus: boolean, cnic: string) => {
   try {
-    await db.update(agreements)
-      .set({ is_active: !currentStatus })
-      .where(eq(agreements.agreement_id, agreementId));
+    await db.transaction(async (tx) => {
+      const newStatus = !currentStatus;
+      await tx.update(agreements)
+        .set({ is_active: newStatus })
+        .where(eq(agreements.agreement_id, agreementId));
+
+      await tx.insert(activity_logs).values({
+        tenant_cnic: cnic,
+        action_type: 'STATUS_CHANGE',
+        description: `Tenant was ${newStatus ? 'reactivated' : 'deactivated (marked as moved out)'}.`,
+      });
+    });
     return { success: true };
   } catch (error) {
     console.error("Error toggling status:", error);
@@ -162,101 +154,5 @@ export const updateExistingTenant = async (cnic: string, data: any) => {
   } catch (error) {
     console.error("Update failed:", error);
     return { success: false, error };
-  }
-};
-
-// ----------------------------------------- Buildings Logic ---------------------------------------------
-
-// Add a new building
-export const insertBuilding = async (name: string, locationDetails: string) => {
-  try {
-    await db.insert(buildings).values({
-      name,
-      location_details: locationDetails,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error inserting building: ", error);
-    return { success: false, error };
-  }
-};
-
-// Get all buildings
-export const getBuildings = async () => {
-  try {
-    const allBuildings = await db.select().from(buildings);
-    return { success: true, data: allBuildings };
-  } catch (error) {
-    console.error("Error fetching buildings: ", error);
-    return { success: false, error, data: [] };
-  }
-};
-
-// Update existing Building
-export const updateBuilding = async (oldName: string, newName: string, newLocation: string) => {
-  try {
-    await db.update(buildings)
-      .set({ name: newName, location_details: newLocation })
-      .where(eq(buildings.name, oldName));
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating building:", error);
-    return { success: false, error };
-  }
-};
-
-// delete existing Building
-export const deleteBuilding = async (name: string) => {
-  try {
-    await db.delete(buildings).where(eq(buildings.name, name));
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting building:", error);
-    return { success: false, error };
-  }
-};
-
-// ------------------------------------------------- Ledgers Logic -----------------------------------------------------------------
-
-export const getFinancialHistory = async (agreementId: string) => {
-  try {
-    // Fetch Rent Ledgers
-    const rentLedgers = await db
-      .select()
-      .from(ledgers)
-      .where(eq(ledgers.agreement_id, agreementId))
-      .orderBy(desc(ledgers.created_at));
-
-    // Fetch Misc Charges
-    const miscCharges = await db
-      .select()
-      .from(misc_charges)
-      .where(eq(misc_charges.agreement_id, agreementId))
-      .orderBy(desc(misc_charges.created_at));
-
-    return {
-      success: true,
-      data: {
-        rentLedgers,
-        miscCharges
-      }
-    };
-  } catch (error) {
-    console.error("Error fetching finances:", error);
-    return { success: false, data: null };
-  }
-};
-
-// --------------------------------------------------- Agreement Logic ------------------------------------------------------
-
-export const uploadAgreementDocument = async (agreementId: string, fileUri: string) => {
-  try {
-    await db.update(agreements)
-      .set({ attachment_uri: fileUri })
-      .where(eq(agreements.agreement_id, agreementId));
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to upload agreement:", error);
-    return { success: false };
   }
 };

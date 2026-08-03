@@ -3,7 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getFinancialHistory } from '@/db/queries';
+import { getFinancialHistory } from '@/db/queries/ledgers.queries';
 import dayjs from 'dayjs';
 
 export default function ManageFinancesScreen() {

@@ -1,21 +1,32 @@
+import { FinancialsSection } from "@/components/tenants-form/financials-details-section";
+import { IdentificationSection } from "@/components/tenants-form/identification-details-section";
+import { TenantDetailsSection } from "@/components/tenants-form/tenants-details-section";
+import { getBuildings } from "@/db/queries/buildings.queries";
+import { registerNewTenant } from "@/db/queries/tenants.queries";
+import { Ionicons } from "@expo/vector-icons";
 import dayjs, { Dayjs } from "dayjs";
 import * as ImagePicker from "expo-image-picker";
-import { router, useLocalSearchParams, Stack } from "expo-router";
-import { useState, useEffect } from "react";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { View, Keyboard, Alert, Text, TouchableOpacity, Modal } from "react-native";
+import {
+  Alert,
+  Keyboard,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import DateTimePicker, { useDefaultClassNames } from "react-native-ui-datepicker";
-import { Ionicons } from "@expo/vector-icons";
-import { getBuildings, registerNewTenant } from "@/db/queries";
-import  TenantFormData  from "../types/types";
-import { TenantDetailsSection } from "@/components/tenants-form/tenants-details-section";
-import { IdentificationSection } from "@/components/tenants-form/identification-details-section";
-import { FinancialsSection } from "@/components/tenants-form/financials-details-section";
-
+import DateTimePicker, {
+  useDefaultClassNames,
+} from "react-native-ui-datepicker";
+import TenantFormData from "../types/types";
 
 export default function AddTenantScreen() {
-  const { buildingName: presetBuildingName } = useLocalSearchParams<{ buildingName?: string }>();
+  const { buildingName: presetBuildingName } = useLocalSearchParams<{
+    buildingName?: string;
+  }>();
 
   // Dates & Images
   const [cnicImage, setCnicImage] = useState<string | null>(null);
@@ -30,9 +41,17 @@ export default function AddTenantScreen() {
 
   // Buildings data
   const [buildingsList, setBuildingsList] = useState<{ name: string }[]>([]);
-  const buildingOptions = buildingsList.map((b) => ({ label: b.name, value: b.name }));
+  const buildingOptions = buildingsList.map((b) => ({
+    label: b.name,
+    value: b.name,
+  }));
 
-  const { control, handleSubmit, formState: { errors }, getValues } = useForm<TenantFormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    getValues,
+  } = useForm<TenantFormData>({
     // mode: "onChange",
     defaultValues: {
       fullName: "",
@@ -81,7 +100,7 @@ export default function AddTenantScreen() {
       monthlyRent: parseInt(data.monthlyRent) || 0,
       firstMonthRentCollected: parseInt(data.firstMonthRentCollected) || 0,
       moveInDate: moveInDate.format("YYYY-MM-DD"),
-      rentDueDay: parseInt(data.rentDueDay), // Pass the new data down
+      rentDueDay: parseInt(data.rentDueDay),
     };
 
     const result = await registerNewTenant(payload);
@@ -93,7 +112,17 @@ export default function AddTenantScreen() {
     }
   };
 
-  const DatePickerModal = ({ visible, date, setDate, onClose }: { visible: boolean, date: Dayjs, setDate: (d: Dayjs) => void, onClose: () => void }) => {
+  const DatePickerModal = ({
+    visible,
+    date,
+    setDate,
+    onClose,
+  }: {
+    visible: boolean;
+    date: Dayjs;
+    setDate: (d: Dayjs) => void;
+    onClose: () => void;
+  }) => {
     const defaultClassNames = useDefaultClassNames();
     return (
       <Modal visible={visible} transparent={true} animationType="fade">
@@ -110,7 +139,10 @@ export default function AddTenantScreen() {
                 today: "border-primary-700",
               }}
             />
-            <TouchableOpacity onPress={onClose} className="mt-4 bg-primary-700 p-3 rounded-lg items-center">
+            <TouchableOpacity
+              onPress={onClose}
+              className="mt-4 bg-primary-700 p-3 rounded-lg items-center"
+            >
               <Text className="text-white font-bold">Confirm</Text>
             </TouchableOpacity>
           </View>
@@ -124,9 +156,13 @@ export default function AddTenantScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-row items-center px-4 pt-12 pb-4 border-b border-border  z-10 shadow-sm">
         <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
-          <Text className="text-foreground text-xl font-bold"><Ionicons name="chevron-back" size={24}/></Text>
+          <Text className="text-foreground text-xl font-bold">
+            <Ionicons name="chevron-back" size={24} />
+          </Text>
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-foreground">Register new tenant</Text>
+        <Text className="text-xl font-bold text-foreground">
+          Register new tenant
+        </Text>
       </View>
 
       <KeyboardAwareScrollView
@@ -135,7 +171,6 @@ export default function AddTenantScreen() {
         contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
-
         {/* COMPONENT 1 */}
         <TenantDetailsSection control={control} errors={errors} />
 
@@ -164,16 +199,34 @@ export default function AddTenantScreen() {
         />
 
         <View className="mt-auto pt-4">
-          <TouchableOpacity onPress={handleSubmit(onSubmit)} className="bg-primary-700 p-4 rounded-xl items-center shadow-sm">
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            className="bg-primary-700 p-4 rounded-xl items-center shadow-sm"
+          >
             <Text className="text-white font-bold text-lg">Save tenant</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAwareScrollView>
 
       {/* MODALS */}
-      <DatePickerModal visible={showIssuePicker} date={cnicIssueDate} setDate={setCnicIssueDate} onClose={() => setShowIssuePicker(false)} />
-      <DatePickerModal visible={showExpiryPicker} date={cnicExpiryDate} setDate={setCnicExpiryDate} onClose={() => setShowExpiryPicker(false)} />
-      <DatePickerModal visible={showMoveInPicker} date={moveInDate} setDate={setMoveInDate} onClose={() => setShowMoveInPicker(false)} />
+      <DatePickerModal
+        visible={showIssuePicker}
+        date={cnicIssueDate}
+        setDate={setCnicIssueDate}
+        onClose={() => setShowIssuePicker(false)}
+      />
+      <DatePickerModal
+        visible={showExpiryPicker}
+        date={cnicExpiryDate}
+        setDate={setCnicExpiryDate}
+        onClose={() => setShowExpiryPicker(false)}
+      />
+      <DatePickerModal
+        visible={showMoveInPicker}
+        date={moveInDate}
+        setDate={setMoveInDate}
+        onClose={() => setShowMoveInPicker(false)}
+      />
     </View>
   );
 }
