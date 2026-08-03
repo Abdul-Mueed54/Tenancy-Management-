@@ -9,19 +9,11 @@ import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  Alert,
-  Keyboard,
-  Modal,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Keyboard, Modal, Text, TouchableOpacity, View, } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import DateTimePicker, {
-  useDefaultClassNames,
-} from "react-native-ui-datepicker";
+import DateTimePicker, { useDefaultClassNames, } from "react-native-ui-datepicker";
 import TenantFormData from "../types/types";
+import { tenants } from "@/db/schema";
 
 export default function AddTenantScreen() {
   const { buildingName: presetBuildingName } = useLocalSearchParams<{
@@ -58,6 +50,7 @@ export default function AddTenantScreen() {
       contactNumber: "",
       presentAddress: "",
       cnicNumber: "",
+      buildingId: "",
       buildingName: presetBuildingName || "",
       unitNumber: "",
       advanceAmount: "",
@@ -88,12 +81,14 @@ export default function AddTenantScreen() {
     Keyboard.dismiss();
 
     const payload = {
+      tenantsId: data.tenantsId,
       fullName: data.fullName,
       contactNumber: data.contactNumber,
       presentAddress: data.presentAddress,
       cnicNumber: data.cnicNumber,
       cnicExpiryDate: cnicExpiryDate.format("YYYY-MM-DD"),
       cnic_uri: cnicImage,
+      buildingId: data.buildingId,
       buildingName: data.buildingName,
       unitNumber: data.unitNumber,
       advanceAmount: parseInt(data.advanceAmount) || 0,

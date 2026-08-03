@@ -1,8 +1,10 @@
 export default interface TenantFormData {
+  tenantsId: string;
   fullName: string;
   contactNumber: string;
   presentAddress: string;
   cnicNumber: string;
+  buildingId: string;
   buildingName: string;
   unitNumber: string;
   advanceAmount: string;
@@ -12,12 +14,14 @@ export default interface TenantFormData {
 };
 
 export type RegisterTenantPayload = {
+  tenantsId: string;
   fullName: string;
   contactNumber: string;
   presentAddress: string;
   cnicNumber: string;
   cnicExpiryDate: string;
   cnic_uri: string | null;
+  buildingId: string;
   buildingName: string;
   advanceAmount: number;
   monthlyRent: number;
