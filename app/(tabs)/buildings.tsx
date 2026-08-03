@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { getBuildings } from '@/db/queries';
+import { getBuildings } from '@/db/queries/buildings.queries';
 
 type Building = {
   name: string;
@@ -24,6 +24,7 @@ export default function BuildingsScreen() {
   );
 
   return (
+
     <View className="flex-1 bg-background pt-12">
       {/* HEADER */}
       <View className="flex-row justify-between items-center px-4 pb-4 border-b border-border">
@@ -39,16 +40,18 @@ export default function BuildingsScreen() {
 
       {/* LIST OF BUILDINGS */}
       {buildingList.length === 0 ? (
+
         <View className="flex-1 items-center justify-center px-4">
           <Ionicons name="business-outline" size={64} color="#a1a1aa" />
           <Text className="text-muted-foreground mt-4 text-center">No buildings added yet. Add your first property to get started.</Text>
         </View>
       ) : (
         <FlatList
-          data={buildingList}
-          keyExtractor={(item) => item.name}
+        data={buildingList}
+        keyExtractor={(item) => item.name}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => router.push(`/buildings/${item.name}`)}>
             <View className="bg-white p-4 rounded-xl mb-4 border border-border shadow-sm">
               <View className="flex-row items-center">
                 <View className="bg-primary/10 p-3 rounded-full mr-4">
@@ -66,14 +69,16 @@ export default function BuildingsScreen() {
                   pathname: '/buildings/edit',
                   params: { oldName: item.name, oldLocation: item.location_details || '' }
                 })}
-              >
+                >
                 <Ionicons name="pencil" size={20} color="#737373" />
               </TouchableOpacity>
               </View>
             </View>
+          </TouchableOpacity>
+
           )}
-        />
-      )}
+          />
+        )}
     </View>
   );
 }

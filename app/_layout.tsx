@@ -5,7 +5,7 @@ import { Stack } from 'expo-router';
 import { openDatabaseSync } from 'expo-sqlite';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-
+import  { KeyboardProvider }  from "react-native-keyboard-controller";
 import { db } from '@/db';
 import migrations from '@/drizzle/migrations';
 
@@ -33,17 +33,21 @@ export default function RootLayout() {
   }
 
   return (
+    <KeyboardProvider>
       <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       {/*  add buildings drawer */}
       <Stack.Screen
         name="buildings/add"
         options={{ presentation: 'transparentModal', headerShown: false, animation: 'slide_from_bottom' }}
-      />
+        />
       {/* edit buildings drawer */}
       <Stack.Screen
         name="buildings/edit"
         options={{ presentation: 'transparentModal', headerShown: false, animation: 'slide_from_bottom' }}
-      />
-    </Stack>);
+        />
+    </Stack>
+        </KeyboardProvider>
+
+    );
 }
