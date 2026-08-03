@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { useLocalSearchParams, router, Stack, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { getFullTenantDetails, toggleTenantStatus, } from '@/db/queries/tenants.queries';
@@ -9,7 +8,7 @@ import { CustomAlertDialog } from '@/components/ui/alert-dialog';
 import { CustomDropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { CustomToast } from '@/components/ui/toast';
 import { ActionsRow } from '@/components/tenants-view/actions-row';
-import { DisplayPersonalInfoOfTenant } from '@/components/tenants-view/personal-info-section';
+import DisplayPersonalInfoOfTenant from '@/components/tenants-view/personal-info-section';
 import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement-details-section';
 import { uploadAgreementDocument } from '@/db/queries/agreements.queries';
 
@@ -119,12 +118,7 @@ export default function TenantDetailsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* OUR NEW CUSTOM TOAST */}
-      <CustomToast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={() => setToast({ ...toast, visible: false })}
-      />
+      <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
 
       <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10 bg-white">
         <View className="flex-row items-center">
@@ -151,13 +145,13 @@ export default function TenantDetailsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1 bg-muted/10 p-4">
         {/* QUICK ACTIONS ROW */}
-        <ActionsRow />
+        <ActionsRow tenant={tenant} agreement={agreement}/>
 
         {/* SECTION: TENANT DETAILS */}
-        <DisplayPersonalInfoOfTenant />
+        <DisplayPersonalInfoOfTenant tenant={tenant} />
 
         {/* SECTION: AGREEMENT DETAILS */}
-        <DisplayAgreementDetailsOfTenant />
+        <DisplayAgreementDetailsOfTenant tenant={tenant} agreement={agreement} />
 
         <TouchableOpacity
           onPress={() => router.push(`/ledgers/${agreement.agreement_id}`)}
@@ -182,8 +176,6 @@ export default function TenantDetailsScreen() {
         onOpenChange={setShowMenu}
         items={menuItems}
       />
-
-
 
       <CustomAlertDialog
         visible={showStatusAlert}

@@ -1,43 +1,36 @@
 
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image, Modal } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, TouchableOpacity,  Image, Modal } from 'react-native';
+import { router, } from 'expo-router';
+import { useState, } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
-import { getFullTenantDetails } from '@/db/queries/tenants.queries';
 
+type Props = {
+  tenant: {
+    name: string;
+    cnic_number: string;
+    cnic_uri: string;
+    contact_no: string;
+    cnic_expiry_date: string;
+    permanent_address: string;
+  };
+  agreement: {
+    agreement_id: string;
+    attachment_uri: string;
+  }
+};
 
-
-export function ActionsRow(){
+export function ActionsRow({tenant, agreement}: Props){
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'success' });
-  const [data, setData] = useState<any>(null);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const { cnic } = useLocalSearchParams<{ cnic: string }>();
   const [imageToView, setImageToView] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ visible: true, message, type });
   };
 
-  const fetchDetails = async () => {
-    setIsLoading(true);
-    if (cnic) {
-      const result = await getFullTenantDetails(cnic);
-      if (result.success) setData(result.data);
-    }
-    setIsLoading(false);
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchDetails();
-    }, [cnic])
-  );
   const handleGenerateHistoryPDF = () => {
     router.push({
       pathname: '/tenants/summary',
@@ -82,20 +75,6 @@ export function ActionsRow(){
         setShowImageModal(true);
       }
     };
-     if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="#0f766e" />
-      </View>
-    );
-  }
-
-  if (!data) return (
-    <View className="flex-1 justify-center items-center bg-background">
-      <Text className="text-xl font-bold">Tenant not found</Text>
-    </View>
-  );
-    const { tenant, agreement } = data;
 
   return(
     <View className="flex-row justify-between mb-6">

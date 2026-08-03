@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { getBuildings } from '@/db/queries';
+import { getBuildings } from '@/db/queries/buildings.queries';
 
 type Building = {
   name: string;

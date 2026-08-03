@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { router, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
-import { updateBuilding, deleteBuilding } from '@/db/queries';
+import { updateBuilding, deleteBuilding } from '@/db/queries/buildings.queries';
 import { CustomAlertDialog } from '@/components/ui/alert-dialog';
 
 type BuildingFormData = {

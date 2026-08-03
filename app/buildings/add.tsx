@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
-import { insertBuilding } from '@/db/queries';
+import { insertBuilding } from '@/db/queries/buildings.queries';
 
 type BuildingFormData = {
   name: string;

@@ -3,7 +3,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getTenantsByBuilding } from '@/db/queries';
+import { getTenantsByBuilding } from '@/db/queries/tenants.queries';
 
 type BuildingTenant = {
   cnic: string;
