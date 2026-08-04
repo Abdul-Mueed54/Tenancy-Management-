@@ -97,11 +97,10 @@ export const processLeaseRenewal = async (data: RenewalPayload) => {
         end_date: newEndDate,
         monthly_rent: data.newMonthlyRent,
         advance_amount: data.advanceAmount,
-        rent_due_day: 5, // Or pass this in the payload if they can change their billing cycle
+        rent_due_day: 5,
         is_active: true,
       }).returning({ id: agreements.id });
 
-      // 4. Generate the first ledger entry for the new contract
       const billingMonth = dayjs(data.newStartDate).format('YYYY-MM');
       await tx.insert(ledgers).values({
         tenant_id: data.tenantId,
@@ -114,7 +113,6 @@ export const processLeaseRenewal = async (data: RenewalPayload) => {
         status: 'pending',
       });
 
-      // 5. Leave an audit trail!
       await tx.insert(activity_logs).values({
         tenant_id: data.tenantId,
         action_type: 'RENEWAL',
@@ -126,5 +124,30 @@ export const processLeaseRenewal = async (data: RenewalPayload) => {
   } catch (error) {
     console.error("Renewal transaction failed:", error);
     return { success: false, error };
+  }
+};
+
+export const getAgreementForRenewal = async (agreementId: string) => {
+  try {
+    const result = await db
+      .select({
+        agreementId: agreements.id,
+        tenantId: agreements.tenant_id,
+        buildingId: agreements.building_id,
+        unitNumber: agreements.unit_number,
+        monthlyRent: agreements.monthly_rent,
+        advanceAmount: agreements.advance_amount,
+        moveInDate: agreements.move_in_date,
+        tenantName: tenants.name,
+      })
+      .from(agreements)
+      .innerJoin(tenants, eq(agreements.tenant_id, tenants.id))
+      .where(eq(agreements.id, agreementId))
+      .limit(1);
+
+    return { success: true, data: result[0] };
+  } catch (error) {
+    console.error("Error fetching agreement for renewal:", error);
+    return { success: false, data: null };
   }
 };
