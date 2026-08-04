@@ -64,7 +64,6 @@ export default function UploadAgreementScreen() {
     <View className="flex-1 ">
       <Stack.Screen options={{ headerShown: false }} />
       <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
-
       <View className="flex-row items-center px-4 pt-12 pb-4 border-b border-border shadow-sm">
         <TouchableOpacity onPress={() => router.back()} className="p-2 mr-1 -ml-2">
           <Ionicons name="chevron-back" size={24} color="#000" />
@@ -76,7 +75,7 @@ export default function UploadAgreementScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1 bg-muted/10 p-4">
-
+       <Text className="text-xs text-red-500 mb-2">NOTE: If you have already uploaded the agreement, uploading it again will override the previous.</Text>
         {/* DOCUMENT UPLOAD SECTION */}
         <View className="rounded-2xl p-5 mb-6 shadow-sm border border-border mt-2">
           <Text className="text-sm font-bold text-foreground mb-1">Contract Document</Text>
