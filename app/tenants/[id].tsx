@@ -43,7 +43,7 @@ export default function TenantDetailsScreen() {
 
   const confirmToggleStatus = async () => {
     setShowStatusAlert(false);
-    const res = await toggleTenantStatus(data.agreement.agreement_id, data.agreement.is_active, id);
+    const res = await toggleTenantStatus(data.agreement.id, data.agreement.is_active, id);
     if (res.success) {
       showToast(`Tenant ${data.agreement.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
       fetchDetails();
@@ -63,7 +63,7 @@ export default function TenantDetailsScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
-        const res = await uploadAgreementDocument(data.agreement.agreement_id, uri);
+        const res = await uploadAgreementDocument(data.agreement.id, uri);
 
         if (res.success) {
           showToast("Agreement uploaded successfully!", "success");
@@ -165,7 +165,7 @@ export default function TenantDetailsScreen() {
         <DisplayAgreementDetailsOfTenant tenant={tenant} agreement={agreement} />
 
         <TouchableOpacity
-          onPress={() => router.push(`/ledgers/${agreement.agreement_id}`)}
+          onPress={() => router.push(`/ledgers/${agreement.id}`)}
           className="bg-white rounded-2xl p-5 mb-12 shadow-sm border border-border flex-row justify-between items-center"
         >
           <View className="flex-row items-center">
