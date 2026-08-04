@@ -1,6 +1,6 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "..";
-import { activity_logs, agreements, tenants } from "../schema";
+import { activity_logs, agreements, buildings, tenants } from "../schema";
 import dayjs from "dayjs";
 
 export const uploadAgreementDetails = async ( agreementId: string, tenantId: string, fileUri: string, startDate: string ) => {
@@ -40,11 +40,14 @@ export const getExpiringAgreements = async (daysLimit = 30) => {
         agreementId: agreements.id,
         tenantId: tenants.id,
         tenantName: tenants.name,
+        contactNumber: tenants.contact_no, 
+        buildingName: buildings.name,
         unitNumber: agreements.unit_number,
         endDate: agreements.end_date,
       })
       .from(agreements)
       .innerJoin(tenants, eq(agreements.tenant_id, tenants.id))
+      .innerJoin(buildings, eq(agreements.building_id, buildings.id))
       .where(
         and(
           eq(agreements.is_active, true),
