@@ -9,24 +9,13 @@ import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  Alert,
-  Keyboard,
-  Modal,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Keyboard, Modal, Text, TouchableOpacity, View, } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import DateTimePicker, {
-  useDefaultClassNames,
-} from "react-native-ui-datepicker";
+import DateTimePicker, { useDefaultClassNames, } from "react-native-ui-datepicker";
 import TenantFormData from "../types/types";
 
 export default function AddTenantScreen() {
-  const { buildingName: presetBuildingName } = useLocalSearchParams<{
-    buildingName?: string;
-  }>();
+  const {buildingId, buildingName: presetBuildingName } = useLocalSearchParams<{ buildingId: string; buildingName?: string; }>();
 
   // Dates & Images
   const [cnicImage, setCnicImage] = useState<string | null>(null);
@@ -40,24 +29,16 @@ export default function AddTenantScreen() {
   const [showMoveInPicker, setShowMoveInPicker] = useState(false);
 
   // Buildings data
-  const [buildingsList, setBuildingsList] = useState<{ name: string }[]>([]);
-  const buildingOptions = buildingsList.map((b) => ({
-    label: b.name,
-    value: b.name,
-  }));
+  const [buildingsList, setBuildingsList] = useState<{id: string; name: string }[]>([]);
+  const buildingOptions = buildingsList.map((b) => ({ label: b.name, value: b.name, }));
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    getValues,
-  } = useForm<TenantFormData>({
-    // mode: "onChange",
+  const { control, handleSubmit, formState: { errors }, getValues, } = useForm<TenantFormData>({
     defaultValues: {
       fullName: "",
       contactNumber: "",
       presentAddress: "",
       cnicNumber: "",
+      buildingId: "",
       buildingName: presetBuildingName || "",
       unitNumber: "",
       advanceAmount: "",
@@ -86,7 +67,12 @@ export default function AddTenantScreen() {
 
   const onSubmit = async (data: TenantFormData) => {
     Keyboard.dismiss();
+    const finalBuildingId = buildingId || data.buildingId;
 
+    if (!finalBuildingId) {
+      Alert.alert("Error", "Please select a building.");
+      return;
+    }
     const payload = {
       fullName: data.fullName,
       contactNumber: data.contactNumber,
@@ -94,7 +80,7 @@ export default function AddTenantScreen() {
       cnicNumber: data.cnicNumber,
       cnicExpiryDate: cnicExpiryDate.format("YYYY-MM-DD"),
       cnic_uri: cnicImage,
-      buildingName: data.buildingName,
+      buildingId: finalBuildingId,
       unitNumber: data.unitNumber,
       advanceAmount: parseInt(data.advanceAmount) || 0,
       monthlyRent: parseInt(data.monthlyRent) || 0,
@@ -112,17 +98,8 @@ export default function AddTenantScreen() {
     }
   };
 
-  const DatePickerModal = ({
-    visible,
-    date,
-    setDate,
-    onClose,
-  }: {
-    visible: boolean;
-    date: Dayjs;
-    setDate: (d: Dayjs) => void;
-    onClose: () => void;
-  }) => {
+  const DatePickerModal = ({ visible, date, setDate, onClose,
+  }: { visible: boolean; date: Dayjs; setDate: (d: Dayjs) => void; onClose: () => void; }) => {
     const defaultClassNames = useDefaultClassNames();
     return (
       <Modal visible={visible} transparent={true} animationType="fade">

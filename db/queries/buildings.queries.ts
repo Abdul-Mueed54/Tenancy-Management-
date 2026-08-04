@@ -5,10 +5,7 @@ import { buildings } from "../schema";
 // Add a new building
 export const insertBuilding = async (name: string, locationDetails: string) => {
   try {
-    await db.insert(buildings).values({
-      name,
-      location_details: locationDetails,
-    });
+    await db.insert(buildings).values({ name, location_details: locationDetails, });
     return { success: true };
   } catch (error) {
     console.error("Error inserting building: ", error);
@@ -27,12 +24,12 @@ export const getBuildings = async () => {
   }
 };
 
-// Update existing Building
-export const updateBuilding = async (oldName: string, newName: string, newLocation: string) => {
+// Update existing Building (Updated to use UUID)
+export const updateBuilding = async (id: string, newName: string, newLocation: string) => {
   try {
     await db.update(buildings)
       .set({ name: newName, location_details: newLocation })
-      .where(eq(buildings.name, oldName));
+      .where(eq(buildings.id, id));
     return { success: true };
   } catch (error) {
     console.error("Error updating building:", error);
@@ -40,10 +37,10 @@ export const updateBuilding = async (oldName: string, newName: string, newLocati
   }
 };
 
-// delete existing Building
-export const deleteBuilding = async (name: string) => {
+// Delete existing Building (Updated to use UUID)
+export const deleteBuilding = async (id: string) => {
   try {
-    await db.delete(buildings).where(eq(buildings.name, name));
+    await db.delete(buildings).where(eq(buildings.id, id));
     return { success: true };
   } catch (error) {
     console.error("Error deleting building:", error);

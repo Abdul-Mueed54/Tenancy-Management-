@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { getBuildings } from '@/db/queries/buildings.queries';
 
 type Building = {
+  id: string;
   name: string;
   location_details: string | null;
 };
@@ -48,10 +49,13 @@ export default function BuildingsScreen() {
       ) : (
         <FlatList
         data={buildingList}
-        keyExtractor={(item) => item.name}
+        keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/buildings/${item.name}`)}>
+          <TouchableOpacity onPress={() => router.push({
+              pathname: '/buildings/[id]',
+              params: { id: item.id, name: item.name }
+            })}>
             <View className="bg-white p-4 rounded-xl mb-4 border border-border shadow-sm">
               <View className="flex-row items-center">
                 <View className="bg-primary/10 p-3 rounded-full mr-4">

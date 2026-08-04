@@ -6,7 +6,7 @@ export const uploadAgreementDocument = async (agreementId: string, fileUri: stri
   try {
     await db.update(agreements)
       .set({ attachment_uri: fileUri })
-      .where(eq(agreements.agreement_id, agreementId));
+      .where(eq(agreements.id, agreementId));
     return { success: true };
   } catch (error) {
     console.error("Failed to upload agreement:", error);

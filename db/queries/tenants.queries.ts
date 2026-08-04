@@ -4,35 +4,33 @@ import { activity_logs, agreements, ledgers, tenants } from "../schema";
 import dayjs from "dayjs";
 import { eq } from "drizzle-orm";
 
-// add new tenant
+// Add new tenant
 export const registerNewTenant = async (data: RegisterTenantPayload) => {
   try {
     await db.transaction(async (tx) => {
-      await tx.insert(tenants).values({
+      const [newTenant] = await tx.insert(tenants).values({
         cnic_number: data.cnicNumber,
         name: data.fullName,
         contact_no: data.contactNumber,
         permanent_address: data.presentAddress,
         cnic_expiry_date: data.cnicExpiryDate,
         cnic_uri: data.cnic_uri,
-      });
+      }).returning({ id: tenants.id });
 
-      const currentYear = dayjs(data.moveInDate).format('YYYY');
-      const agreementId = `${data.buildingName}-${data.cnicNumber}-${currentYear}`;
       const endDate = dayjs(data.moveInDate).add(11, 'month').format('YYYY-MM-DD');
 
-      await tx.insert(agreements).values({
-        agreement_id: agreementId,
-        tenant_cnic: data.cnicNumber,
-        building_name: data.buildingName,
+      const [newAgreement] = await tx.insert(agreements).values({
+        tenant_id: newTenant.id,
+        building_id: data.buildingId, // Make sure your frontend payload passes the building's UUID
         unit_number: data.unitNumber,
+        move_in_date: data.moveInDate,
         start_date: data.moveInDate,
         end_date: endDate,
         advance_amount: data.advanceAmount,
         monthly_rent: data.monthlyRent,
         rent_due_day: data.rentDueDay,
         is_active: true,
-      });
+      }).returning({ id: agreements.id });
 
       const amountDue = data.monthlyRent - data.firstMonthRentCollected;
       let status = 'pending';
@@ -42,14 +40,20 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
       const billingMonth = dayjs(data.moveInDate).format('YYYY-MM');
 
       await tx.insert(ledgers).values({
-        tenant_cnic: data.cnicNumber,
-        agreement_id: agreementId,
+        tenant_id: newTenant.id,
+        agreement_id: newAgreement.id,
         entry_type: 'rent',
         billing_month: billingMonth,
         total_payable_amount: data.monthlyRent,
         amount_paid: data.firstMonthRentCollected,
         amount_due: amountDue > 0 ? amountDue : 0,
         status: status,
+      });
+
+      await tx.insert(activity_logs).values({
+        tenant_id: newTenant.id,
+        action_type: 'SYSTEM',
+        description: `Tenant profile created and keys handed over (Move-in: ${data.moveInDate}).`,
       });
     });
 
@@ -60,11 +64,12 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
   }
 };
 
-// get tenants of specific building
-export const getTenantsByBuilding = async (buildingName: string) => {
+// Get tenants of specific building (Updated to use Building UUID)
+export const getTenantsByBuilding = async (buildingId: string) => {
   try {
     const result = await db
       .select({
+        id: tenants.id,
         cnic: tenants.cnic_number,
         name: tenants.name,
         contact: tenants.contact_no,
@@ -72,8 +77,8 @@ export const getTenantsByBuilding = async (buildingName: string) => {
         isActive: agreements.is_active,
       })
       .from(agreements)
-      .innerJoin(tenants, eq(agreements.tenant_cnic, tenants.cnic_number))
-      .where(eq(agreements.building_name, buildingName));
+      .innerJoin(tenants, eq(agreements.tenant_id, tenants.id))
+      .where(eq(agreements.building_id, buildingId));
 
     return { success: true, data: result };
   } catch (error) {
@@ -82,8 +87,8 @@ export const getTenantsByBuilding = async (buildingName: string) => {
   }
 };
 
-
-export const getFullTenantDetails = async (cnic: string) => {
+// Get full tenant details (Updated to use Tenant UUID instead of CNIC)
+export const getFullTenantDetails = async (tenantId: string) => {
   try {
     const result = await db
       .select({
@@ -91,8 +96,8 @@ export const getFullTenantDetails = async (cnic: string) => {
         agreement: agreements,
       })
       .from(tenants)
-      .innerJoin(agreements, eq(tenants.cnic_number, agreements.tenant_cnic))
-      .where(eq(tenants.cnic_number, cnic))
+      .innerJoin(agreements, eq(tenants.id, agreements.tenant_id))
+      .where(eq(tenants.id, tenantId))
       .limit(1);
 
     return { success: true, data: result[0] };
@@ -102,16 +107,18 @@ export const getFullTenantDetails = async (cnic: string) => {
   }
 };
 
-export const toggleTenantStatus = async (agreementId: string, currentStatus: boolean, cnic: string) => {
+// Toggle Tenant Status (Updated to use UUIDs)
+export const toggleTenantStatus = async (agreementId: string, currentStatus: boolean, tenantId: string) => {
   try {
     await db.transaction(async (tx) => {
       const newStatus = !currentStatus;
+
       await tx.update(agreements)
         .set({ is_active: newStatus })
-        .where(eq(agreements.agreement_id, agreementId));
+        .where(eq(agreements.id, agreementId));
 
       await tx.insert(activity_logs).values({
-        tenant_cnic: cnic,
+        tenant_id: tenantId,
         action_type: 'STATUS_CHANGE',
         description: `Tenant was ${newStatus ? 'reactivated' : 'deactivated (marked as moved out)'}.`,
       });
@@ -123,31 +130,30 @@ export const toggleTenantStatus = async (agreementId: string, currentStatus: boo
   }
 };
 
-// Update the Tenant and Agreement
-export const updateExistingTenant = async (cnic: string, data: any) => {
+// Update the Tenant and Agreement (Updated to use UUID)
+export const updateExistingTenant = async (tenantId: string, data: any) => {
   try {
     await db.transaction(async (tx) => {
-      // 1. Update Tenant Details
       await tx.update(tenants)
         .set({
+          cnic_number: data.cnicNumber,
           name: data.fullName,
           contact_no: data.contactNumber,
           permanent_address: data.presentAddress,
           cnic_expiry_date: data.cnicExpiryDate,
           cnic_uri: data.cnic_uri,
         })
-        .where(eq(tenants.cnic_number, cnic));
+        .where(eq(tenants.id, tenantId));
 
-      // 2. Update Agreement Details
       await tx.update(agreements)
         .set({
-          building_name: data.buildingName,
+          building_id: data.buildingId,
           unit_number: data.unitNumber,
           advance_amount: data.advanceAmount,
           monthly_rent: data.monthlyRent,
           rent_due_day: data.rentDueDay,
         })
-        .where(eq(agreements.tenant_cnic, cnic));
+        .where(eq(agreements.tenant_id, tenantId));
     });
 
     return { success: true };
