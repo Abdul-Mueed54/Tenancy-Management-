@@ -1,7 +1,18 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "..";
-import { activity_logs, agreements, buildings, tenants } from "../schema";
+import { activity_logs, agreements, buildings, ledgers, tenants } from "../schema";
 import dayjs from "dayjs";
+
+interface RenewalPayload {
+  oldAgreementId: string;
+  tenantId: string;
+  buildingId: string;
+  unitNumber: string;
+  moverInDate: string;
+  advanceAmount: number;
+  newMonthlyRent: number;
+  newStartDate: string; // YYYY-MM-DD
+}
 
 export const uploadAgreementDetails = async ( agreementId: string, tenantId: string, fileUri: string, startDate: string ) => {
   try {
@@ -40,7 +51,7 @@ export const getExpiringAgreements = async (daysLimit = 30) => {
         agreementId: agreements.id,
         tenantId: tenants.id,
         tenantName: tenants.name,
-        contactNumber: tenants.contact_no, 
+        contactNumber: tenants.contact_no,
         buildingName: buildings.name,
         unitNumber: agreements.unit_number,
         endDate: agreements.end_date,
@@ -63,5 +74,57 @@ export const getExpiringAgreements = async (daysLimit = 30) => {
   } catch (error) {
     console.error("Error fetching expiring agreements:", error);
     return { success: false, data: [] };
+  }
+};
+
+
+export const processLeaseRenewal = async (data: RenewalPayload) => {
+  try {
+    await db.transaction(async (tx) => {
+      // Archive the old agreement
+      await tx.update(agreements)
+        .set({ is_active: false })
+        .where(eq(agreements.id, data.oldAgreementId));
+
+      const newEndDate = dayjs(data.newStartDate).add(11, 'month').format('YYYY-MM-DD');
+
+      const [newAgreement] = await tx.insert(agreements).values({
+        tenant_id: data.tenantId,
+        building_id: data.buildingId,
+        unit_number: data.unitNumber,
+        move_in_date: data.moverInDate,
+        start_date: data.newStartDate,
+        end_date: newEndDate,
+        monthly_rent: data.newMonthlyRent,
+        advance_amount: data.advanceAmount,
+        rent_due_day: 5, // Or pass this in the payload if they can change their billing cycle
+        is_active: true,
+      }).returning({ id: agreements.id });
+
+      // 4. Generate the first ledger entry for the new contract
+      const billingMonth = dayjs(data.newStartDate).format('YYYY-MM');
+      await tx.insert(ledgers).values({
+        tenant_id: data.tenantId,
+        agreement_id: newAgreement.id,
+        entry_type: 'rent',
+        billing_month: billingMonth,
+        total_payable_amount: data.newMonthlyRent,
+        amount_paid: 0,
+        amount_due: data.newMonthlyRent,
+        status: 'pending',
+      });
+
+      // 5. Leave an audit trail!
+      await tx.insert(activity_logs).values({
+        tenant_id: data.tenantId,
+        action_type: 'RENEWAL',
+        description: `Lease renewed for Unit ${data.unitNumber}. Rent updated to Rs ${data.newMonthlyRent}.`,
+      });
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Renewal transaction failed:", error);
+    return { success: false, error };
   }
 };

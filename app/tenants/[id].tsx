@@ -105,14 +105,14 @@ export default function TenantDetailsScreen() {
       {/* OUR NEW CUSTOM TOAST */}
       <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
 
-      <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10 bg-white">
+      <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="p-2 mr-1 -ml-2">
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-foreground">{tenant.name}</Text>
-            <Text className="text-xs text-muted-foreground">{agreement.unit_number}</Text>
+            <Text className="text-xs text-muted-foreground">Floor {agreement.unit_number}</Text>
           </View>
         </View>
 
