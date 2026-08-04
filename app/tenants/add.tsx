@@ -4,15 +4,15 @@ import { TenantDetailsSection } from "@/components/tenants-form/tenants-details-
 import { getBuildings } from "@/db/queries/buildings.queries";
 import { registerNewTenant } from "@/db/queries/tenants.queries";
 import { Ionicons } from "@expo/vector-icons";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Alert, Keyboard, Modal, Text, TouchableOpacity, View, } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import DateTimePicker, { useDefaultClassNames, } from "react-native-ui-datepicker";
 import TenantFormData from "../types/types";
+import { DatePickerModal } from "@/components/ui/date-picker";
 
 export default function AddTenantScreen() {
   const {buildingId, buildingName: presetBuildingName } = useLocalSearchParams<{ buildingId: string; buildingName?: string; }>();
@@ -96,36 +96,6 @@ export default function AddTenantScreen() {
     } else {
       Alert.alert("Error", "Could not register tenant. Ensure CNIC is unique.");
     }
-  };
-
-  const DatePickerModal = ({ visible, date, setDate, onClose,
-  }: { visible: boolean; date: Dayjs; setDate: (d: Dayjs) => void; onClose: () => void; }) => {
-    const defaultClassNames = useDefaultClassNames();
-    return (
-      <Modal visible={visible} transparent={true} animationType="fade">
-        <View className="flex-1 justify-center items-center bg-black/50 px-4">
-          <View className="bg-white rounded-xl border-border p-4 w-full shadow-xl">
-            <DateTimePicker
-              mode="single"
-              date={date.toDate()}
-              onChange={(params) => setDate(dayjs(params.date))}
-              classNames={{
-                ...defaultClassNames,
-                selected: "bg-primary-500 border-primary-700",
-                selected_label: "text-white",
-                today: "border-primary-700",
-              }}
-            />
-            <TouchableOpacity
-              onPress={onClose}
-              className="mt-4 bg-primary-700 p-3 rounded-lg items-center"
-            >
-              <Text className="text-white font-bold">Confirm</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
   };
 
   return (

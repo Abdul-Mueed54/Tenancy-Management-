@@ -1,12 +1,23 @@
 import { eq } from "drizzle-orm";
 import { db } from "..";
-import { agreements } from "../schema";
+import { activity_logs, agreements } from "../schema";
 
-export const uploadAgreementDocument = async (agreementId: string, fileUri: string) => {
+export const uploadAgreementDetails = async ( agreementId: string, tenantId: string, fileUri: string, startDate: string ) => {
   try {
-    await db.update(agreements)
-      .set({ attachment_uri: fileUri })
-      .where(eq(agreements.id, agreementId));
+    await db.transaction(async (tx) => {
+      await tx.update(agreements)
+        .set({
+          attachment_uri: fileUri,
+          start_date: startDate,
+        })
+        .where(eq(agreements.id, agreementId));
+
+      await tx.insert(activity_logs).values({
+        tenant_id: tenantId,
+        action_type: 'DOCUMENT',
+        description: `Official agreement document uploaded (Contract Start: ${startDate}).`,
+      });
+    });
     return { success: true };
   } catch (error) {
     console.error("Failed to upload agreement:", error);
