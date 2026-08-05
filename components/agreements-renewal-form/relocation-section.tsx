@@ -3,7 +3,7 @@ import { Controller, Control, FieldErrors } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 import dayjs, { Dayjs } from 'dayjs';
 
-import { CustomSelect } from '@/components/ui/select'; 
+import { CustomSelect } from '@/components/ui/select';
 
 type FormData = {
   newMonthlyRent: string;
@@ -154,10 +154,8 @@ export const RelocationSection = ({
             <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1">New Move-in Date</Text>
             <TouchableOpacity
               onPress={() => setShowMoveInPicker(true)}
-              className="flex-row items-center bg-muted/20 border border-border rounded-xl px-4 py-3"
-            >
-              <Ionicons name="log-in-outline" size={20} color="#0f766e" className="mr-2" />
-              <Text className="text-foreground font-medium">{newMoveInDate.format('MMM D, YYYY')}</Text>
+              className="flex-row items-center bg-muted/20 border border-border rounded-xl px-4 py-3" >
+              <Text className="text-foreground">{newMoveInDate.format('MMM D, YYYY')}</Text>
             </TouchableOpacity>
           </View>
         </View>

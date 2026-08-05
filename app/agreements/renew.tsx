@@ -91,6 +91,10 @@ export default function RenewAgreementScreen() {
   }, [agreementId, setValue]);
 
   const onSubmit = async (data: FormData) => {
+    if (!fileUri) {
+      showToast("Please attach the new rental agreement.", "error");
+      return;
+    }
     setIsSubmitting(true);
 
     const payload = {

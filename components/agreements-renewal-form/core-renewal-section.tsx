@@ -37,7 +37,9 @@ export const CoreRenewalSection = ({
       <View className="flex-row justify-between">
         {/* NEW MONTHLY RENT */}
         <View className="flex-1 mr-2">
-          <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1">New Monthly Rent (Rs)</Text>
+          <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1">
+            New Monthly Rent <Text className="text-red-500">*</Text>
+          </Text>
           <Controller
             control={control}
             name="newMonthlyRent"
@@ -64,7 +66,10 @@ export const CoreRenewalSection = ({
 
         {/* RENEWAL START DATE */}
         <View className="flex-1 ml-2">
-          <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1">Renewal Start Date</Text>
+          <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1">
+            Renewal Start Date <Text className="text-red-500">*</Text>
+          </Text>
+          {/* Removed the broken Controller here. It always has a value via dayjs()! */}
           <TouchableOpacity
             onPress={() => setShowRenewalPicker(true)}
             className="flex-row items-center justify-between bg-muted/20 border border-border rounded-xl px-4 py-3"
@@ -75,9 +80,11 @@ export const CoreRenewalSection = ({
       </View>
 
       {/* DOCUMENT UPLOAD */}
-      <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1 mt-5">New Rental Agreement</Text>
+      <Text className="text-xs font-bold text-muted-foreground mb-1 ml-1 mt-5">
+        New Rental Agreement <Text className="text-red-500">*</Text>
+      </Text>
       <View className="bg-white rounded-xl p-4 mt-1 border border-border">
-        <Text className="text-xs text-muted-foreground mb-3">Attach the new Rental agreement.</Text>
+        <Text className="text-xs text-muted-foreground mb-3">Attach the newly signed lease.</Text>
         <TouchableOpacity
           onPress={handlePickDocument}
           className={`border border-dashed rounded-xl p-4 items-center justify-center ${fileUri ? 'border-teal-500 bg-teal-50' : 'border-border bg-muted/10'}`}
