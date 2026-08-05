@@ -2,7 +2,7 @@ import { RegisterTenantPayload } from "@/app/types/types";
 import { db } from "..";
 import { activity_logs, agreements, ledgers, tenants } from "../schema";
 import dayjs from "dayjs";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 // Add new tenant
 export const registerNewTenant = async (data: RegisterTenantPayload) => {
@@ -78,7 +78,12 @@ export const getTenantsByBuilding = async (buildingId: string) => {
       })
       .from(agreements)
       .innerJoin(tenants, eq(agreements.tenant_id, tenants.id))
-      .where(eq(agreements.building_id, buildingId));
+      .where(
+        and(
+          eq(agreements.building_id, buildingId),
+          eq(agreements.is_active, true)
+        )
+      );
 
     return { success: true, data: result };
   } catch (error) {

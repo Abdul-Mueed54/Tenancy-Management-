@@ -1,5 +1,4 @@
 import '../global.css';
-
 import { View, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { openDatabaseSync } from 'expo-sqlite';
