@@ -8,10 +8,12 @@ interface RenewalPayload {
   tenantId: string;
   buildingId: string;
   unitNumber: string;
-  moverInDate: string;
+  moveInDate: string;
   advanceAmount: number;
+  rentDueDay: number;
   newMonthlyRent: number;
   newStartDate: string; // YYYY-MM-DD
+  attachmentUri: string | null;
 }
 
 export const uploadAgreementDetails = async ( agreementId: string, tenantId: string, fileUri: string, startDate: string ) => {
@@ -92,12 +94,13 @@ export const processLeaseRenewal = async (data: RenewalPayload) => {
         tenant_id: data.tenantId,
         building_id: data.buildingId,
         unit_number: data.unitNumber,
-        move_in_date: data.moverInDate,
+        move_in_date: data.moveInDate,
         start_date: data.newStartDate,
         end_date: newEndDate,
         monthly_rent: data.newMonthlyRent,
         advance_amount: data.advanceAmount,
-        rent_due_day: 5,
+        attachment_uri: data.attachmentUri,
+        rent_due_day: data.rentDueDay,
         is_active: true,
       }).returning({ id: agreements.id });
 
@@ -138,6 +141,7 @@ export const getAgreementForRenewal = async (agreementId: string) => {
         monthlyRent: agreements.monthly_rent,
         advanceAmount: agreements.advance_amount,
         moveInDate: agreements.move_in_date,
+        rentDueDay: agreements.rent_due_day,
         tenantName: tenants.name,
       })
       .from(agreements)
