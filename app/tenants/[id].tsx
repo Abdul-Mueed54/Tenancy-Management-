@@ -10,7 +10,7 @@ import { CustomToast } from '@/components/ui/toast';
 import { ActionsRow } from '@/components/tenants-view/actions-row';
 import DisplayPersonalInfoOfTenant from '@/components/tenants-view/personal-info-section';
 import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement-details-section';
-import { uploadAgreementDocument } from '@/db/queries/agreements.queries';
+
 
 export default function TenantDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,32 +51,6 @@ export default function TenantDetailsScreen() {
       showToast('Failed to update tenant status.', 'error');
     }
   };
-
-  const handleUploadAgreement = async () => {
-    setShowMenu(false);
-
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'], // Allow PDFs and Images
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        const res = await uploadAgreementDocument(data.agreement.id, uri);
-
-        if (res.success) {
-          showToast("Agreement uploaded successfully!", "success");
-          fetchDetails();
-        } else {
-          showToast("Could not save the document.", "error");
-        }
-      }
-    } catch (error) {
-      showToast("An error occurred while picking the document.", "error");
-    }
-  };
-
 
   if (isLoading) {
     return (
@@ -131,14 +105,14 @@ export default function TenantDetailsScreen() {
       {/* OUR NEW CUSTOM TOAST */}
       <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
 
-      <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10 bg-white">
+      <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="p-2 mr-1 -ml-2">
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-foreground">{tenant.name}</Text>
-            <Text className="text-xs text-muted-foreground">Unit {agreement.unit_number}</Text>
+            <Text className="text-xs text-muted-foreground">Floor {agreement.unit_number}</Text>
           </View>
         </View>
 

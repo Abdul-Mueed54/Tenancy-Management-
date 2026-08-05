@@ -26,6 +26,7 @@
     "dayjs": "^1.11.21",
     "drizzle-orm": "^0.45.2",
     "expo": "~54.0.35",
+    "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-document-picker": "~14.0.8",
     "expo-drizzle-studio-plugin": "^0.2.1",
