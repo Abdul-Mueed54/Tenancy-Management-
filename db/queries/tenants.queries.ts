@@ -64,7 +64,6 @@ export const registerNewTenant = async (data: RegisterTenantPayload) => {
   }
 };
 
-// Get tenants of specific building (Updated to use Building UUID)
 export const getTenantsByBuilding = async (buildingId: string) => {
   try {
     const result = await db
@@ -81,7 +80,7 @@ export const getTenantsByBuilding = async (buildingId: string) => {
       .where(
         and(
           eq(agreements.building_id, buildingId),
-          eq(agreements.is_active, true)
+          eq(tenants.is_active, true)
         )
       );
 
@@ -112,7 +111,6 @@ export const getFullTenantDetails = async (tenantId: string) => {
   }
 };
 
-// Toggle Tenant Status (Updated to use UUIDs)
 export const toggleTenantStatus = async (agreementId: string, currentStatus: boolean, tenantId: string) => {
   try {
     await db.transaction(async (tx) => {
@@ -121,6 +119,10 @@ export const toggleTenantStatus = async (agreementId: string, currentStatus: boo
       await tx.update(agreements)
         .set({ is_active: newStatus })
         .where(eq(agreements.id, agreementId));
+
+      await tx.update(tenants)
+        .set({ is_active: newStatus })
+        .where(eq(tenants.id, tenantId));
 
       await tx.insert(activity_logs).values({
         tenant_id: tenantId,

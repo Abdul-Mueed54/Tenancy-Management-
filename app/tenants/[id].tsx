@@ -2,7 +2,6 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, } from 're
 import { useLocalSearchParams, router, Stack, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
 import { getFullTenantDetails, toggleTenantStatus, } from '@/db/queries/tenants.queries';
 import { CustomAlertDialog } from '@/components/ui/alert-dialog';
 import { CustomDropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -43,9 +42,9 @@ export default function TenantDetailsScreen() {
 
   const confirmToggleStatus = async () => {
     setShowStatusAlert(false);
-    const res = await toggleTenantStatus(data.agreement.id, data.agreement.is_active, id);
+    const res = await toggleTenantStatus(data.agreement.id, data.tenant.is_active, id);
     if (res.success) {
-      showToast(`Tenant ${data.agreement.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
+      showToast(`Tenant ${data.tenant.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
       fetchDetails();
     } else {
       showToast('Failed to update tenant status.', 'error');
@@ -77,7 +76,6 @@ export default function TenantDetailsScreen() {
     {
       label: agreement.attachment_uri ? "Update Agreement" : "Upload Agreement",
       icon: "document-attach",
-      // 5. Use the dedicated upload screen we talked about!
       onPress: () => {
         setShowMenu(false);
         router.push({
@@ -91,9 +89,9 @@ export default function TenantDetailsScreen() {
       },
     },
     {
-      label: agreement.is_active ? 'Deactivate' : 'Reactivate',
+      label: tenant.is_active ? 'Deactivate' : 'Reactivate',
       icon: "power",
-      isDestructive: agreement.is_active,
+      isDestructive: tenant.is_active,
       onPress: () => setShowStatusAlert(true),
     }
   ];
@@ -112,14 +110,14 @@ export default function TenantDetailsScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-foreground">{tenant.name}</Text>
-            <Text className="text-xs text-muted-foreground">Floor {agreement.unit_number}</Text>
+            <Text className="text-xs text-muted-foreground">Floor - {agreement.unit_number}</Text>
           </View>
         </View>
 
         <View className="flex-row items-center">
-          <View className={`px-2 py-1 rounded-md mr-1 ${agreement.is_active ? 'bg-green-100' : 'bg-red-100'}`}>
-            <Text className={`text-xs font-bold uppercase ${agreement.is_active ? 'text-green-700' : 'text-red-700'}`}>
-              {agreement.is_active ? 'Active' : 'Inactive'}
+          <View className={`px-2 py-1 rounded-md mr-1 ${tenant.is_active ? 'bg-green-100' : 'bg-red-100'}`}>
+            <Text className={`text-xs font-bold uppercase ${tenant.is_active ? 'text-green-700' : 'text-red-700'}`}>
+              {tenant.is_active ? 'Active' : 'Inactive'}
             </Text>
           </View>
           <TouchableOpacity onPress={() => setShowMenu(true)} className="p-2 -mr-2">
@@ -165,11 +163,11 @@ export default function TenantDetailsScreen() {
       <CustomAlertDialog
         visible={showStatusAlert}
         onOpenChange={setShowStatusAlert}
-        title={agreement.is_active ? "Deactivate Tenant" : "Activate Tenant"}
-        description={`Are you sure you want to mark this tenant as ${agreement.is_active ? "inactive" : "active"}?`}
+        title={tenant.is_active ? "Deactivate Tenant" : "Activate Tenant"}
+        description={`Are you sure you want to mark this tenant as ${tenant.is_active ? "inactive" : "active"}?`}
         actionText="Confirm"
         onAction={confirmToggleStatus}
-        isDestructive={agreement.is_active}
+        isDestructive={tenant.is_active}
       />
     </View>
   );
