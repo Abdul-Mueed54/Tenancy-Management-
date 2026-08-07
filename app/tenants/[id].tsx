@@ -82,7 +82,7 @@ export default function TenantDetailsScreen() {
     {
       label: "Edit Tenant",
       icon: "pencil",
-      onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
+      onPress: () => router.push(`/tenants/edit?id=${tenant.id}`),
     },
     {
       label: "Lease History",
@@ -93,7 +93,6 @@ export default function TenantDetailsScreen() {
       },
     },
   ];
-
 
   if (!hasDocument) {
     dynamicMenuItems.push({

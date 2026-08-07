@@ -2,95 +2,99 @@ import { FinancialsSection } from "@/components/tenants-form/financials-details-
 import { IdentificationSection } from "@/components/tenants-form/identification-details-section";
 import { TenantDetailsSection } from "@/components/tenants-form/tenants-details-section";
 import { getBuildings } from "@/db/queries/buildings.queries";
-import {
-  getFullTenantDetails,
-  updateExistingTenant,
-} from "@/db/queries/tenants.queries";
+import { getFullTenantDetails, updateExistingTenant } from "@/db/queries/tenants.queries";
 import { Ionicons } from "@expo/vector-icons";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Modal,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import DateTimePicker, {
-  useDefaultClassNames,
-} from "react-native-ui-datepicker";
+import { CustomToast } from "@/components/ui/toast";
+import { DatePickerModal } from "@/components/ui/date-picker";
 import TenantFormData from "../types/types";
 
 export default function EditTenantScreen() {
-  const { cnic } = useLocalSearchParams<{ cnic: string }>();
-
+  const { id } = useLocalSearchParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [cnicImage, setCnicImage] = useState<string | null>(null);
+
+  // Toast State
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
+
+  // Agreement Document State
+  const [agreementUri, setAgreementUri] = useState<string | null>(null);
+  const [agreementName, setAgreementName] = useState<string | null>(null);
+
+  // Date States
   const [cnicIssueDate, setCnicIssueDate] = useState(dayjs());
   const [cnicExpiryDate, setCnicExpiryDate] = useState(dayjs().add(10, "year"));
   const [moveInDate, setMoveInDate] = useState(dayjs());
+  const [startDate, setStartDate] = useState(dayjs());
 
   const [showIssuePicker, setShowIssuePicker] = useState(false);
   const [showExpiryPicker, setShowExpiryPicker] = useState(false);
   const [showMoveInPicker, setShowMoveInPicker] = useState(false);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
 
   const [buildingsList, setBuildingsList] = useState<{ name: string }[]>([]);
-  const buildingOptions = buildingsList.map((b) => ({
-    label: b.name,
-    value: b.name,
-  }));
+  const buildingOptions = buildingsList.map((b) => ({ label: b.name, value: b.name, }));
+  const [presetBuildingName, setPresetBuildingName] = useState<string>("");
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    getValues,
-    reset,
-  } = useForm<TenantFormData>();
+  const { control, handleSubmit, formState: { errors }, getValues, reset, } = useForm<TenantFormData>();
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ visible: true, message, type });
+  };
 
   useEffect(() => {
     const initializeData = async () => {
       setIsLoading(true);
-
-      // 1. Fetch Buildings for the dropdown
       const buildRes = await getBuildings();
       if (buildRes.success) setBuildingsList(buildRes.data);
+      if (id) {
+      const tenantRes = await getFullTenantDetails(id);
+      if (tenantRes.success && tenantRes.data) {
+        const { tenant, agreement } = tenantRes.data;
 
-      // 2. Fetch the Tenant's current data
-      if (cnic) {
-        const tenantRes = await getFullTenantDetails(cnic);
-        if (tenantRes.success && tenantRes.data) {
-          const { tenant, agreement } = tenantRes.data;
-
+        let currentBuildingName = "";
+        if (buildRes.success) {
+          const matchingBuilding = buildRes.data.find(
+            (b: any) => b.id === agreement.building_id
+          );
+          if (matchingBuilding) {
+            currentBuildingName = matchingBuilding.name;
+            setPresetBuildingName(currentBuildingName);
+          }
+        }
           reset({
             fullName: tenant.name,
             contactNumber: tenant.contact_no,
             presentAddress: tenant.permanent_address || "",
             cnicNumber: tenant.cnic_number,
-            buildingName: agreement.building_name,
+            buildingId: agreement.building_id,
+            buildingName: currentBuildingName,
             unitNumber: agreement.unit_number,
             advanceAmount: agreement.advance_amount.toString(),
             monthlyRent: agreement.monthly_rent.toString(),
             rentDueDay: agreement.rent_due_day.toString(),
           });
-
           if (tenant.cnic_uri) setCnicImage(tenant.cnic_uri);
-          if (tenant.cnic_expiry_date)
-            setCnicExpiryDate(dayjs(tenant.cnic_expiry_date));
-          if (agreement.start_date) setMoveInDate(dayjs(agreement.start_date));
+          if (tenant.cnic_expiry_date) setCnicExpiryDate(dayjs(tenant.cnic_expiry_date));
+          if (agreement.move_in_date) setMoveInDate(dayjs(agreement.move_in_date));
+          if (agreement.start_date) setStartDate(dayjs(agreement.start_date));
+          if (agreement.attachment_uri) {
+            setAgreementUri(agreement.attachment_uri);
+            setAgreementName("Current Agreement Attached");
+          }
         }
       }
       setIsLoading(false);
     };
-
     initializeData();
-  }, [cnic, reset]);
+  }, [id, reset]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -101,13 +105,29 @@ export default function EditTenantScreen() {
     if (!result.canceled) setCnicImage(result.assets[0].uri);
   };
 
+  const pickAgreement = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setAgreementUri(result.assets[0].uri);
+        setAgreementName(result.assets[0].name);
+      }
+    } catch (error) {
+      showToast("An error occurred while picking the document.", "error");
+    }
+  };
+
   const onSubmit = async (data: TenantFormData) => {
     Keyboard.dismiss();
-
     const payload = {
       fullName: data.fullName,
       contactNumber: data.contactNumber,
       presentAddress: data.presentAddress,
+      cnicNumber: data.cnicNumber,
       cnicExpiryDate: cnicExpiryDate.format("YYYY-MM-DD"),
       cnic_uri: cnicImage,
       buildingName: data.buildingName,
@@ -115,54 +135,17 @@ export default function EditTenantScreen() {
       advanceAmount: parseInt(data.advanceAmount) || 0,
       monthlyRent: parseInt(data.monthlyRent) || 0,
       rentDueDay: parseInt(data.rentDueDay),
+      moveInDate: moveInDate.format("YYYY-MM-DD"),
+      startDate: startDate.format("YYYY-MM-DD"),
+      attachmentUri: agreementUri,
     };
-
-    const result = await updateExistingTenant(cnic, payload);
+    const result = await updateExistingTenant(id, payload);
 
     if (result.success) {
       router.back();
     } else {
-      Alert.alert("Error", "Could not update tenant details.");
+      showToast("Could not update tenant details.", "error");
     }
-  };
-
-  const DatePickerModal = ({
-    visible,
-    date,
-    setDate,
-    onClose,
-  }: {
-    visible: boolean;
-    date: Dayjs;
-    setDate: (d: Dayjs) => void;
-    onClose: () => void;
-  }) => {
-    const defaultClassNames = useDefaultClassNames();
-    return (
-      <Modal visible={visible} transparent={true} animationType="fade">
-        <View className="flex-1 justify-center items-center bg-black/50 px-4">
-          <View className="bg-white rounded-xl border-border p-4 w-full shadow-xl">
-            <DateTimePicker
-              mode="single"
-              date={date.toDate()}
-              onChange={(params) => setDate(dayjs(params.date))}
-              classNames={{
-                ...defaultClassNames,
-                selected: "bg-primary-500 border-primary-700",
-                selected_label: "text-white",
-                today: "border-primary-700",
-              }}
-            />
-            <TouchableOpacity
-              onPress={onClose}
-              className="mt-4 bg-primary-700 p-3 rounded-lg items-center"
-            >
-              <Text className="text-white font-bold">Confirm</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
   };
 
   if (isLoading) {
@@ -176,6 +159,13 @@ export default function EditTenantScreen() {
   return (
     <View className="flex-1 bg-white">
       <Stack.Screen options={{ headerShown: false }} />
+
+      <CustomToast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast({ ...toast, visible: false })}
+      />
 
       <View className="flex-row items-center px-4 pt-12 pb-4 border-b border-border bg-white z-10 shadow-sm">
         <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
@@ -192,7 +182,6 @@ export default function EditTenantScreen() {
       >
         <TenantDetailsSection control={control} errors={errors} />
 
-        {/* We disable the CNIC field inside the IdentificationSection so they can't change the primary key */}
         <IdentificationSection
           control={control}
           errors={errors}
@@ -209,10 +198,57 @@ export default function EditTenantScreen() {
           errors={errors}
           getValues={getValues}
           buildingOptions={buildingOptions}
+          presetBuildingName={presetBuildingName}
           moveInDate={moveInDate}
           setShowMoveInPicker={setShowMoveInPicker}
           isEdit={true}
         />
+
+        {/* AGREEMENT & START DATE SECTION */}
+        <View className="mt-6 mb-4">
+          <Text className="text-lg font-bold text-foreground mb-4">Lease Agreement</Text>
+
+          <View className="rounded-2xl p-5 mb-4 shadow-sm border border-border bg-white">
+            <Text className="text-sm font-bold text-foreground mb-1">Contract Document</Text>
+            <Text className="text-xs text-muted-foreground mb-4">Attach the signed PDF or scanned images of the lease.</Text>
+
+            <TouchableOpacity
+              onPress={pickAgreement}
+              className={`border border-dashed rounded-xl p-8 items-center justify-center ${
+                agreementUri ? 'border-teal-500 bg-teal-50' : 'border-border bg-muted/20'
+              }`}
+            >
+              <Ionicons
+                name={agreementUri ? "document-text" : "cloud-upload-outline"}
+                size={32}
+                color={agreementUri ? "#0f766e" : "#a1a1aa"}
+              />
+              <Text className={`mt-2 font-medium text-center ${agreementUri ? 'text-teal-700' : 'text-muted-foreground'}`}>
+                {agreementName || "Tap to select document"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="rounded-2xl p-5 mb-4 shadow-sm border border-border bg-white">
+            <Text className="text-sm font-bold text-foreground mb-1">Official Start Date</Text>
+            <Text className="text-xs text-muted-foreground mb-4">The exact date the legal contract goes into effect.</Text>
+
+            <TouchableOpacity
+              onPress={() => setShowStartDatePicker(true)}
+              className="flex-row justify-between items-center bg-muted/10 border border-border rounded-xl p-4"
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="calendar-outline" size={20} color="#0f766e" className="mr-3" />
+                <Text className="text-foreground font-medium ml-2">{startDate.format('MMMM D, YYYY')}</Text>
+              </View>
+              <Ionicons name="pencil" size={16} color="#a1a1aa" />
+            </TouchableOpacity>
+          </View>
+
+          <Text className="text-xs text-muted-foreground px-2">
+            The Expiry Date (11 Months from the start date) of this agreement will be calculated automatically, also the app will notify you 20 days before the actual expiry.
+          </Text>
+        </View>
 
         <View className="mt-auto pt-4">
           <TouchableOpacity
@@ -224,24 +260,11 @@ export default function EditTenantScreen() {
         </View>
       </KeyboardAwareScrollView>
 
-      <DatePickerModal
-        visible={showIssuePicker}
-        date={cnicIssueDate}
-        setDate={setCnicIssueDate}
-        onClose={() => setShowIssuePicker(false)}
-      />
-      <DatePickerModal
-        visible={showExpiryPicker}
-        date={cnicExpiryDate}
-        setDate={setCnicExpiryDate}
-        onClose={() => setShowExpiryPicker(false)}
-      />
-      <DatePickerModal
-        visible={showMoveInPicker}
-        date={moveInDate}
-        setDate={setMoveInDate}
-        onClose={() => setShowMoveInPicker(false)}
-      />
+      {/* USING IMPORTED DATE PICKER MODAL */}
+      <DatePickerModal visible={showIssuePicker} date={cnicIssueDate} setDate={setCnicIssueDate} onClose={() => setShowIssuePicker(false)} />
+      <DatePickerModal visible={showExpiryPicker} date={cnicExpiryDate} setDate={setCnicExpiryDate} onClose={() => setShowExpiryPicker(false)} />
+      <DatePickerModal visible={showMoveInPicker} date={moveInDate} setDate={setMoveInDate} onClose={() => setShowMoveInPicker(false)} />
+      <DatePickerModal visible={showStartDatePicker} date={startDate} setDate={setStartDate} onClose={() => setShowStartDatePicker(false)} />
     </View>
   );
 }
