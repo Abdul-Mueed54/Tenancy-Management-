@@ -1,12 +1,18 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Linking, Platform } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as IntentLauncher from 'expo-intent-launcher';
+
 import { getTenantAgreementHistory } from '@/db/queries/agreements.queries';
 import { CustomToast } from '@/components/ui/toast';
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import { DocumentViewerModal } from '@/components/ui/document-viewer-modal';
 
 type LeaseHistoryRecord = {
   id: string;
@@ -25,7 +31,11 @@ export default function LeaseHistoryScreen() {
 
   const [history, setHistory] = useState<LeaseHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'error' as 'error' });
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'error' as 'error' | 'success'});
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ visible: true, message, type });
+  };
+  const { openDocument, imageToView, showImageModal, closeViewer } = useDocumentViewer(showToast);
 
   useFocusEffect(
     useCallback(() => {
@@ -45,16 +55,10 @@ export default function LeaseHistoryScreen() {
     }, [tenantId])
   );
 
-  const openDocument = async (uri: string) => {
-    try {
-      await Linking.openURL(uri);
-    } catch (error) {
-      setToast({ visible: true, message: 'Could not open document', type: 'error' });
-    }
-  };
+
 
   const renderHistoryCard = ({ item }: { item: LeaseHistoryRecord }) => (
-    <View className={`bg-white border rounded-xl p-4 mb-4 shadow-sm ${item.isActive ? 'border-teal-500' : 'border-border'}`}>
+    <View className={`bg-white border rounded-xl p-4 mb-4 shadow-sm ${item.isActive ? 'border-primary-500' : 'border-border'}`}>
 
       {/* HEADER: Dates & Status Badge */}
       <View className="flex-row justify-between items-start mb-3">
@@ -106,6 +110,12 @@ export default function LeaseHistoryScreen() {
     <View className="flex-1 bg-muted/10">
       <Stack.Screen options={{ headerShown: false }} />
       <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
+
+      <DocumentViewerModal
+        visible={showImageModal}
+        imageUri={imageToView}
+        onClose={closeViewer}
+      />
 
       {/* HEADER */}
       <View className="flex-row items-center px-4 pt-12 pb-4 border-b border-border bg-white shadow-sm z-10">
