@@ -1,16 +1,17 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router, Stack, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
-import { getFullTenantDetails, toggleTenantStatus, } from '@/db/queries/tenants.queries';
+import { getFullTenantDetails, toggleTenantStatus } from '@/db/queries/tenants.queries';
 import { CustomAlertDialog } from '@/components/ui/alert-dialog';
 import { CustomDropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { CustomToast } from '@/components/ui/toast';
 import { ActionsRow } from '@/components/tenants-view/actions-row';
 import DisplayPersonalInfoOfTenant from '@/components/tenants-view/personal-info-section';
 import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement-details-section';
-
+import dayjs from 'dayjs';
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import { DocumentViewerModal } from '@/components/ui/document-viewer-modal';
 
 export default function TenantDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,12 +20,15 @@ export default function TenantDetailsScreen() {
 
   // Modals & Toast state
   const [showStatusAlert, setShowStatusAlert] = useState(false);
+  const [showEarlyRenewAlert, setShowEarlyRenewAlert] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'success' });
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ visible: true, message, type });
   };
+
+  const { openDocument, imageToView, showImageModal, closeViewer } = useDocumentViewer(showToast);
 
   const fetchDetails = async () => {
     setIsLoading(true);
@@ -43,13 +47,18 @@ export default function TenantDetailsScreen() {
 
   const confirmToggleStatus = async () => {
     setShowStatusAlert(false);
-    const res = await toggleTenantStatus(data.agreement.id, data.agreement.is_active, id);
+    const res = await toggleTenantStatus(data.agreement.id, data.tenant.is_active, id);
     if (res.success) {
-      showToast(`Tenant ${data.agreement.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
+      showToast(`Tenant ${data.tenant.is_active ? 'deactivated' : 'activated'} successfully!`, 'success');
       fetchDetails();
     } else {
       showToast('Failed to update tenant status.', 'error');
     }
+  };
+
+  const handleProceedToRenewal = () => {
+    setShowEarlyRenewAlert(false);
+    router.push({ pathname: '../agreements/renew', params: { agreementId: data.agreement.id }});
   };
 
   if (isLoading) {
@@ -67,43 +76,63 @@ export default function TenantDetailsScreen() {
   );
 
   const { tenant, agreement } = data;
-
-  const menuItems: DropdownMenuItem[] = [
+  const isExpired = dayjs(agreement.end_date).isBefore(dayjs(), 'day');
+  const hasDocument = !!agreement.attachment_uri;
+  const dynamicMenuItems: DropdownMenuItem[] = [
     {
       label: "Edit Tenant",
       icon: "pencil",
       onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
     },
     {
-      label: agreement.attachment_uri ? "Update Agreement" : "Upload Agreement",
-      icon: "document-attach",
-      // 5. Use the dedicated upload screen we talked about!
+      label: "Lease History",
+      icon: "time",
       onPress: () => {
         setShowMenu(false);
-        router.push({
-          pathname: '/tenants/upload-agreement',
-          params: {
-            agreementId: agreement.id,
-            tenantId: tenant.id,
-            tenantName: tenant.name
-          }
-        });
+        router.push({ pathname: '../agreements/history', params: { tenantId: tenant.id, tenantName: tenant.name }});
       },
     },
-    {
-      label: agreement.is_active ? 'Deactivate' : 'Reactivate',
-      icon: "power",
-      isDestructive: agreement.is_active,
-      onPress: () => setShowStatusAlert(true),
-    }
   ];
+
+
+  if (!hasDocument) {
+    dynamicMenuItems.push({
+      label: "Upload Agreement",
+      icon: "document-attach",
+      onPress: () => {
+        setShowMenu(false);
+        router.push({ pathname: '/agreements/upload', params: { agreementId: agreement.id, tenantId: tenant.id, tenantName: tenant.name }});
+      },
+    });
+  } else {
+    dynamicMenuItems.push({
+      label: "Process Lease Renewal",
+      icon: "refresh-circle",
+      onPress: () => {
+        setShowMenu(false);
+        if (!isExpired) {
+          setShowEarlyRenewAlert(true);
+        } else {
+          handleProceedToRenewal();
+        }
+      },
+    });
+  }
+
+  dynamicMenuItems.push({
+    label: tenant.is_active ? 'Vacate / Move Out' : 'Reactivate Tenant',
+    icon: "power",
+    isDestructive: tenant.is_active,
+    onPress: () => setShowStatusAlert(true),
+  });
 
   return (
     <View className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* OUR NEW CUSTOM TOAST */}
       <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
+
+      <DocumentViewerModal visible={showImageModal} imageUri={imageToView} onClose={closeViewer} />
 
       <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10">
         <View className="flex-row items-center">
@@ -112,14 +141,14 @@ export default function TenantDetailsScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-foreground">{tenant.name}</Text>
-            <Text className="text-xs text-muted-foreground">Floor {agreement.unit_number}</Text>
+            <Text className="text-xs text-muted-foreground">Floor - {agreement.unit_number}</Text>
           </View>
         </View>
 
         <View className="flex-row items-center">
-          <View className={`px-2 py-1 rounded-md mr-1 ${agreement.is_active ? 'bg-green-100' : 'bg-red-100'}`}>
-            <Text className={`text-xs font-bold uppercase ${agreement.is_active ? 'text-green-700' : 'text-red-700'}`}>
-              {agreement.is_active ? 'Active' : 'Inactive'}
+          <View className={`px-2 py-1 rounded-md mr-1 ${tenant.is_active ? 'bg-green-100' : 'bg-red-100'}`}>
+            <Text className={`text-xs font-bold uppercase ${tenant.is_active ? 'text-green-700' : 'text-red-700'}`}>
+              {tenant.is_active ? 'Active' : 'Inactive'}
             </Text>
           </View>
           <TouchableOpacity onPress={() => setShowMenu(true)} className="p-2 -mr-2">
@@ -153,23 +182,31 @@ export default function TenantDetailsScreen() {
           </View>
           <Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
         </TouchableOpacity>
-
       </ScrollView>
 
       <CustomDropdownMenu
         visible={showMenu}
         onOpenChange={setShowMenu}
-        items={menuItems}
+        items={dynamicMenuItems}
       />
 
       <CustomAlertDialog
         visible={showStatusAlert}
         onOpenChange={setShowStatusAlert}
-        title={agreement.is_active ? "Deactivate Tenant" : "Activate Tenant"}
-        description={`Are you sure you want to mark this tenant as ${agreement.is_active ? "inactive" : "active"}?`}
+        title={tenant.is_active ? "Deactivate Tenant" : "Activate Tenant"}
+        description={`Are you sure you want to mark this tenant as ${tenant.is_active ? "inactive" : "active"}?`}
         actionText="Confirm"
         onAction={confirmToggleStatus}
-        isDestructive={agreement.is_active}
+        isDestructive={tenant.is_active}
+      />
+
+      <CustomAlertDialog
+        visible={showEarlyRenewAlert}
+        onOpenChange={setShowEarlyRenewAlert}
+        title="Renew Early?"
+        description="The current agreement hasn't reached its end date yet. Are you sure you want to process a renewal now?"
+        actionText="Proceed to Renewal"
+        onAction={handleProceedToRenewal}
       />
     </View>
   );

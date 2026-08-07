@@ -1,0 +1,1 @@
+ALTER TABLE `tenants` ADD `is_active` integer DEFAULT true NOT NULL;

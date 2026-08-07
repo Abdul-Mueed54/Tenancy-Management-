@@ -1,4 +1,4 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "..";
 import { activity_logs, agreements, buildings, ledgers, tenants } from "../schema";
 import dayjs from "dayjs";
@@ -153,5 +153,56 @@ export const getAgreementForRenewal = async (agreementId: string) => {
   } catch (error) {
     console.error("Error fetching agreement for renewal:", error);
     return { success: false, data: null };
+  }
+};
+
+export const getArchivedAgreements = async () => {
+  try {
+    const result = await db
+      .select({
+        id: agreements.id,
+        tenantName: tenants.name,
+        buildingName: buildings.name,
+        unitNumber: agreements.unit_number,
+        startDate: agreements.start_date,
+        endDate: agreements.end_date,
+        monthlyRent: agreements.monthly_rent,
+      })
+      .from(agreements)
+      .innerJoin(tenants, eq(agreements.tenant_id, tenants.id))
+      .innerJoin(buildings, eq(agreements.building_id, buildings.id))
+      .where(eq(agreements.is_active, false))
+      .orderBy(desc(agreements.end_date)); // Shows the most recently ended leases first
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error fetching archived agreements:", error);
+    return { success: false, data: [] };
+  }
+};
+
+export const getTenantAgreementHistory = async (tenantId: string) => {
+  try {
+    const result = await db
+      .select({
+        id: agreements.id,
+        buildingName: buildings.name,
+        unitNumber: agreements.unit_number,
+        startDate: agreements.start_date,
+        endDate: agreements.end_date,
+        monthlyRent: agreements.monthly_rent,
+        advanceAmount: agreements.advance_amount,
+        isActive: agreements.is_active,
+        attachmentUri: agreements.attachment_uri,
+      })
+      .from(agreements)
+      .innerJoin(buildings, eq(agreements.building_id, buildings.id))
+      .where(eq(agreements.tenant_id, tenantId))
+      .orderBy(desc(agreements.start_date));
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error fetching tenant lease history:", error);
+    return { success: false, data: [] };
   }
 };

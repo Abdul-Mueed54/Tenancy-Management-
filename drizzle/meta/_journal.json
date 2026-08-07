@@ -36,6 +36,13 @@
       "when": 1785790064449,
       "tag": "0004_regular_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786015139632,
+      "tag": "0005_chubby_nicolaos",
+      "breakpoints": true
     }
   ]
 }

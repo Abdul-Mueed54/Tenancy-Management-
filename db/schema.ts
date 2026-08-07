@@ -21,6 +21,7 @@ export const tenants = sqliteTable('tenants', {
   contact_no: text('contact_no').notNull(),
   cnic_expiry_date: text('cnic_expiry_date'),
   permanent_address: text('permanent_address'),
+  is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   cnic_uri: text('cnic_uri'),
   ...timestamps
 });
@@ -31,7 +32,7 @@ export const agreements = sqliteTable('agreements', {
   building_id: text('building_id').references(() => buildings.id).notNull(),
   move_in_date: text('move_in_date').notNull(),
   start_date: text('start_date').notNull(),
-  end_date: text('end_date').notNull(),         
+  end_date: text('end_date').notNull(),
   unit_number: text('unit_number').notNull(),
   advance_amount: integer('advance_amount').notNull(),
   monthly_rent: integer('monthly_rent').notNull(),
