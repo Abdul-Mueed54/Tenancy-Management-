@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router, Stack, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { getFullTenantDetails, toggleTenantStatus, } from '@/db/queries/tenants.queries';
+import { getFullTenantDetails, toggleTenantStatus } from '@/db/queries/tenants.queries';
 import { CustomAlertDialog } from '@/components/ui/alert-dialog';
 import { CustomDropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { CustomToast } from '@/components/ui/toast';
@@ -10,7 +10,8 @@ import { ActionsRow } from '@/components/tenants-view/actions-row';
 import DisplayPersonalInfoOfTenant from '@/components/tenants-view/personal-info-section';
 import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement-details-section';
 import dayjs from 'dayjs';
-
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import { DocumentViewerModal } from '@/components/ui/document-viewer-modal';
 
 export default function TenantDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,12 +20,15 @@ export default function TenantDetailsScreen() {
 
   // Modals & Toast state
   const [showStatusAlert, setShowStatusAlert] = useState(false);
+  const [showEarlyRenewAlert, setShowEarlyRenewAlert] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'success' });
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ visible: true, message, type });
   };
+
+  const { openDocument, imageToView, showImageModal, closeViewer } = useDocumentViewer(showToast);
 
   const fetchDetails = async () => {
     setIsLoading(true);
@@ -52,6 +56,11 @@ export default function TenantDetailsScreen() {
     }
   };
 
+  const handleProceedToRenewal = () => {
+    setShowEarlyRenewAlert(false);
+    router.push({ pathname: '../agreements/renew', params: { agreementId: data.agreement.id }});
+  };
+
   if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-background">
@@ -67,131 +76,63 @@ export default function TenantDetailsScreen() {
   );
 
   const { tenant, agreement } = data;
-
-  // const menuItems: DropdownMenuItem[] = [
-  //   {
-  //     label: "Edit Tenant",
-  //     icon: "pencil",
-  //     onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
-  //   },
-  //   {
-  //     label: agreement.attachment_uri ? "Update Agreement" : "Upload Agreement",
-  //     icon: "document-attach",
-  //     onPress: () => {
-  //       setShowMenu(false);
-  //       router.push({
-  //         pathname: '/tenants/upload-agreement',
-  //         params: {
-  //           agreementId: agreement.id,
-  //           tenantId: tenant.id,
-  //           tenantName: tenant.name
-  //         }
-  //       });
-  //     },
-  //   },
-  //   {
-  //     label: "Lease History",
-  //     icon: "time",
-  //     onPress: () => {
-  //       setShowMenu(false);
-  //       router.push({
-  //         pathname: '../agreements/history',
-  //         params: { tenantId: tenant.id, tenantName: tenant.name }
-  //       });
-  //     },
-  //   },
-  //   {
-  //     label: "Upload New Agreement",
-  //     icon: "time",
-  //     onPress: () => {
-  //       setShowMenu(false);
-  //       router.push({
-  //         pathname: '../agreements/renew',
-  //         params: { agreementId: agreement.id }
-  //       });
-  //     },
-  //   },
-  //   {
-  //     label: tenant.is_active ? 'Deactivate' : 'Reactivate',
-  //     icon: "power",
-  //     isDestructive: tenant.is_active,
-  //     onPress: () => setShowStatusAlert(true),
-  //   }
-  // ];
-
-
-// 1. Is the current lease expired? (Comparing against today's date)
-const isExpired = dayjs(agreement.end_date).isBefore(dayjs(), 'day');
-
-// 2. Do we have a document?
-const hasDocument = !!agreement.attachment_uri;
-
-// 3. Build the dynamic menu based on YOUR required flow
-const dynamicMenuItems: DropdownMenuItem[] = [
-  {
-    label: "Edit Tenant",
-    icon: "pencil",
-    onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
-  },
-  {
-    label: "Lease History",
-    icon: "time",
-    onPress: () => {
-      setShowMenu(false);
-      router.push({ pathname: '../agreements/history', params: { tenantId: tenant.id, tenantName: tenant.name }});
+  const isExpired = dayjs(agreement.end_date).isBefore(dayjs(), 'day');
+  const hasDocument = !!agreement.attachment_uri;
+  const dynamicMenuItems: DropdownMenuItem[] = [
+    {
+      label: "Edit Tenant",
+      icon: "pencil",
+      onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
     },
-  },
-];
+    {
+      label: "Lease History",
+      icon: "time",
+      onPress: () => {
+        setShowMenu(false);
+        router.push({ pathname: '../agreements/history', params: { tenantId: tenant.id, tenantName: tenant.name }});
+      },
+    },
+  ];
 
-// --- THE SMART LOGIC YOU ASKED FOR ---
 
-if (!hasDocument && !isExpired) {
-  // STATE 1: First time, needs upload
+  if (!hasDocument) {
+    dynamicMenuItems.push({
+      label: "Upload Agreement",
+      icon: "document-attach",
+      onPress: () => {
+        setShowMenu(false);
+        router.push({ pathname: '/agreements/upload', params: { agreementId: agreement.id, tenantId: tenant.id, tenantName: tenant.name }});
+      },
+    });
+  } else {
+    dynamicMenuItems.push({
+      label: "Process Lease Renewal",
+      icon: "refresh-circle",
+      onPress: () => {
+        setShowMenu(false);
+        if (!isExpired) {
+          setShowEarlyRenewAlert(true);
+        } else {
+          handleProceedToRenewal();
+        }
+      },
+    });
+  }
+
   dynamicMenuItems.push({
-    label: "Upload Agreement",
-    icon: "document-attach",
-    onPress: () => {
-      setShowMenu(false);
-      router.push({ pathname: '/tenants/upload-agreement', params: { agreementId: agreement.id, tenantId: tenant.id, tenantName: tenant.name }});
-    },
+    label: tenant.is_active ? 'Vacate / Move Out' : 'Reactivate Tenant',
+    icon: "power",
+    isDestructive: tenant.is_active,
+    onPress: () => setShowStatusAlert(true),
   });
-} else if (hasDocument && !isExpired) {
-  // STATE 2: Document uploaded, lease running normally
-  dynamicMenuItems.push({
-    label: "Agreement Already Uploaded", // Tells them it's done!
-    icon: "checkmark-circle",
-    onPress: () => {
-      setShowMenu(false);
-      showToast("Agreement is already uploaded for this lease.", "info");
-      // Optional: openDocument(agreement.attachment_uri)
-    },
-  });
-} else if (isExpired) {
-  // STATE 3: End date reached! Show the renewal option
-  dynamicMenuItems.push({
-    label: "Process Lease Renewal",
-    icon: "refresh-circle", // Use a distinct icon
-    onPress: () => {
-      setShowMenu(false);
-      router.push({ pathname: '../agreements/renew', params: { agreementId: agreement.id }});
-    },
-  });
-}
-
-// --- THE DESTRUCTIVE ACTION ---
-dynamicMenuItems.push({
-  label: tenant.is_active ? 'Vacate / Move Out' : 'Reactivate Tenant',
-  icon: "power",
-  isDestructive: tenant.is_active,
-  onPress: () => setShowStatusAlert(true),
-});
 
   return (
     <View className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* OUR NEW CUSTOM TOAST */}
       <CustomToast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast({ ...toast, visible: false })} />
+
+      <DocumentViewerModal visible={showImageModal} imageUri={imageToView} onClose={closeViewer} />
 
       <View className="flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-border shadow-sm z-10">
         <View className="flex-row items-center">
@@ -241,7 +182,6 @@ dynamicMenuItems.push({
           </View>
           <Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
         </TouchableOpacity>
-
       </ScrollView>
 
       <CustomDropdownMenu
@@ -258,6 +198,15 @@ dynamicMenuItems.push({
         actionText="Confirm"
         onAction={confirmToggleStatus}
         isDestructive={tenant.is_active}
+      />
+
+      <CustomAlertDialog
+        visible={showEarlyRenewAlert}
+        onOpenChange={setShowEarlyRenewAlert}
+        title="Renew Early?"
+        description="The current agreement hasn't reached its end date yet. Are you sure you want to process a renewal now?"
+        actionText="Proceed to Renewal"
+        onAction={handleProceedToRenewal}
       />
     </View>
   );

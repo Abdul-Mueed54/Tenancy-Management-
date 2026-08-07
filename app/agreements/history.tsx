@@ -55,8 +55,6 @@ export default function LeaseHistoryScreen() {
     }, [tenantId])
   );
 
-
-
   const renderHistoryCard = ({ item }: { item: LeaseHistoryRecord }) => (
     <View className={`bg-white border rounded-xl p-4 mb-4 shadow-sm ${item.isActive ? 'border-primary-500' : 'border-border'}`}>
 
