@@ -80,7 +80,7 @@ export const getTenantsByBuilding = async (buildingId: string) => {
       .where(
         and(
           eq(agreements.building_id, buildingId),
-          eq(tenants.is_active, true)
+          eq(agreements.is_active, true)
         )
       );
 
@@ -91,7 +91,6 @@ export const getTenantsByBuilding = async (buildingId: string) => {
   }
 };
 
-// Get full tenant details (Updated to use Tenant UUID instead of CNIC)
 export const getFullTenantDetails = async (tenantId: string) => {
   try {
     const result = await db
@@ -101,7 +100,7 @@ export const getFullTenantDetails = async (tenantId: string) => {
       })
       .from(tenants)
       .innerJoin(agreements, eq(tenants.id, agreements.tenant_id))
-      .where(eq(tenants.id, tenantId))
+      .where (and(eq(tenants.id, tenantId), eq(agreements.is_active, true)))
       .limit(1);
 
     return { success: true, data: result[0] };

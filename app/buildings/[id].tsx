@@ -25,7 +25,6 @@ export default function BuildingDetailsScreen() {
       const fetchData = async () => {
         setIsLoading(true);
         if (id) {
-          console.log(id)
           const result = await getTenantsByBuilding(id);
           if (result.success && result.data) {
             setTenants(result.data);

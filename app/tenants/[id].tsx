@@ -9,6 +9,7 @@ import { CustomToast } from '@/components/ui/toast';
 import { ActionsRow } from '@/components/tenants-view/actions-row';
 import DisplayPersonalInfoOfTenant from '@/components/tenants-view/personal-info-section';
 import DisplayAgreementDetailsOfTenant from '@/components/tenants-view/agreement-details-section';
+import dayjs from 'dayjs';
 
 
 export default function TenantDetailsScreen() {
@@ -67,34 +68,123 @@ export default function TenantDetailsScreen() {
 
   const { tenant, agreement } = data;
 
-  const menuItems: DropdownMenuItem[] = [
-    {
-      label: "Edit Tenant",
-      icon: "pencil",
-      onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
+  // const menuItems: DropdownMenuItem[] = [
+  //   {
+  //     label: "Edit Tenant",
+  //     icon: "pencil",
+  //     onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
+  //   },
+  //   {
+  //     label: agreement.attachment_uri ? "Update Agreement" : "Upload Agreement",
+  //     icon: "document-attach",
+  //     onPress: () => {
+  //       setShowMenu(false);
+  //       router.push({
+  //         pathname: '/tenants/upload-agreement',
+  //         params: {
+  //           agreementId: agreement.id,
+  //           tenantId: tenant.id,
+  //           tenantName: tenant.name
+  //         }
+  //       });
+  //     },
+  //   },
+  //   {
+  //     label: "Lease History",
+  //     icon: "time",
+  //     onPress: () => {
+  //       setShowMenu(false);
+  //       router.push({
+  //         pathname: '../agreements/history',
+  //         params: { tenantId: tenant.id, tenantName: tenant.name }
+  //       });
+  //     },
+  //   },
+  //   {
+  //     label: "Upload New Agreement",
+  //     icon: "time",
+  //     onPress: () => {
+  //       setShowMenu(false);
+  //       router.push({
+  //         pathname: '../agreements/renew',
+  //         params: { agreementId: agreement.id }
+  //       });
+  //     },
+  //   },
+  //   {
+  //     label: tenant.is_active ? 'Deactivate' : 'Reactivate',
+  //     icon: "power",
+  //     isDestructive: tenant.is_active,
+  //     onPress: () => setShowStatusAlert(true),
+  //   }
+  // ];
+
+
+// 1. Is the current lease expired? (Comparing against today's date)
+const isExpired = dayjs(agreement.end_date).isBefore(dayjs(), 'day');
+
+// 2. Do we have a document?
+const hasDocument = !!agreement.attachment_uri;
+
+// 3. Build the dynamic menu based on YOUR required flow
+const dynamicMenuItems: DropdownMenuItem[] = [
+  {
+    label: "Edit Tenant",
+    icon: "pencil",
+    onPress: () => router.push(`/tenants/edit?cnic=${tenant.cnic_number}`),
+  },
+  {
+    label: "Lease History",
+    icon: "time",
+    onPress: () => {
+      setShowMenu(false);
+      router.push({ pathname: '../agreements/history', params: { tenantId: tenant.id, tenantName: tenant.name }});
     },
-    {
-      label: agreement.attachment_uri ? "Update Agreement" : "Upload Agreement",
-      icon: "document-attach",
-      onPress: () => {
-        setShowMenu(false);
-        router.push({
-          pathname: '/tenants/upload-agreement',
-          params: {
-            agreementId: agreement.id,
-            tenantId: tenant.id,
-            tenantName: tenant.name
-          }
-        });
-      },
+  },
+];
+
+// --- THE SMART LOGIC YOU ASKED FOR ---
+
+if (!hasDocument && !isExpired) {
+  // STATE 1: First time, needs upload
+  dynamicMenuItems.push({
+    label: "Upload Agreement",
+    icon: "document-attach",
+    onPress: () => {
+      setShowMenu(false);
+      router.push({ pathname: '/tenants/upload-agreement', params: { agreementId: agreement.id, tenantId: tenant.id, tenantName: tenant.name }});
     },
-    {
-      label: tenant.is_active ? 'Deactivate' : 'Reactivate',
-      icon: "power",
-      isDestructive: tenant.is_active,
-      onPress: () => setShowStatusAlert(true),
-    }
-  ];
+  });
+} else if (hasDocument && !isExpired) {
+  // STATE 2: Document uploaded, lease running normally
+  dynamicMenuItems.push({
+    label: "Agreement Already Uploaded", // Tells them it's done!
+    icon: "checkmark-circle",
+    onPress: () => {
+      setShowMenu(false);
+      showToast("Agreement is already uploaded for this lease.", "info");
+      // Optional: openDocument(agreement.attachment_uri)
+    },
+  });
+} else if (isExpired) {
+  // STATE 3: End date reached! Show the renewal option
+  dynamicMenuItems.push({
+    label: "Process Lease Renewal",
+    icon: "refresh-circle", // Use a distinct icon
+    onPress: () => {
+      setShowMenu(false);
+      router.push({ pathname: '../agreements/renew', params: { agreementId: agreement.id }});
+    },
+  });
+}
+
+// --- THE DESTRUCTIVE ACTION ---
+dynamicMenuItems.push({
+  label: tenant.is_active ? 'Vacate / Move Out' : 'Reactivate Tenant',
+  icon: "power",
+  isDestructive: tenant.is_active,
+  onPress: () => setShowStatusAlert(true),
+});
 
   return (
     <View className="flex-1">
@@ -157,7 +247,7 @@ export default function TenantDetailsScreen() {
       <CustomDropdownMenu
         visible={showMenu}
         onOpenChange={setShowMenu}
-        items={menuItems}
+        items={dynamicMenuItems}
       />
 
       <CustomAlertDialog
